@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+ * チームカラーは検証済みカテゴリカルパレットを使用。
+ * ライト/ダークで別ステップの色を割り当てる (自動反転ではない)。
+ */
+:root {
+  --background: #f9f9f7;
+  --surface: #fcfcfb;
+  --foreground: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+  --hairline: #e1e0d9;
+
+  --team-climb: #2a78d6;
+  --team-wheelchair: #1baf7a;
+  --team-fishing_bike: #eda100;
+  --team-ink-climb: #ffffff;
+  --team-ink-wheelchair: #04281a;
+  --team-ink-fishing_bike: #2e2000;
+
+  --status-done: #0ca30c;
+  --status-in_progress: #fab219;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d0d0d;
+    --surface: #1a1a19;
+    --foreground: #ffffff;
+    --ink-secondary: #c3c2b7;
+    --ink-muted: #898781;
+    --hairline: #2c2c2a;
+
+    --team-climb: #3987e5;
+    --team-wheelchair: #199e70;
+    --team-fishing_bike: #c98500;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline: var(--hairline);
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    var(--font-geist-sans),
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP",
+    sans-serif;
+  /* ガントの横スクロール中にブラウザの「戻る」ジェスチャが誤発動するのを防ぐ */
+  overscroll-behavior-x: none;
+}
