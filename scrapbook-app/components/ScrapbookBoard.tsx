@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  X, ExternalLink, Pin, Search, Star,
+  Plus, X, ExternalLink, Loader2, Pin, Search, Star,
   Archive, ArchiveRestore, LayoutGrid, Grid3x3, List,
 } from "lucide-react";
 import {
   archiveItemAction,
+  createItemAction,
   deleteItemAction,
+  fetchMetadataAction,
   restoreItemAction,
   toggleImportantAction,
 } from "@/app/actions";
 import { hostnameOf } from "@/lib/metadata";
-import { RESERVED_TABS, type Item } from "@/lib/types";
+import { isReservedCategory, RESERVED_TABS, type Item } from "@/lib/types";
+
+const SUGGESTED_CATEGORIES = ["電子工作", "デザイン参考", "アニマトロニクス", "勉強", "お茶", "読みもの"];
 
 const TAB_PALETTE = ["#6E8CAE", "#7C9473", "#C9A227", "#A6679C", "#4F8A8B", "#B8783F", "#8A6FA8", "#5B8266"];
 
@@ -31,11 +35,23 @@ export default function ScrapbookBoard({ initialItems }: { initialItems: Item[] 
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [viewMode, setViewMode] = useState<ViewMode>("normal");
   const [query, setQuery] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [formStep, setFormStep] = useState<"url" | "edit">("url");
+  const [urlInput, setUrlInput] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [fetchError, setFetchError] = useState("");
+  const [draft, setDraft] = useState({ title: "", description: "", image: "", category: "" });
+  const urlInputRef = useRef<HTMLInputElement>(null);
 
   // サーバー側の再レンダリング (router.refresh など) の結果を取り込む
   useEffect(() => {
     setItems(initialItems);
   }, [initialItems]);
+
+  useEffect(() => {
+    if (showForm && formStep === "url" && urlInputRef.current) urlInputRef.current.focus();
+  }, [showForm, formStep]);
 
   // 楽観的にローカル状態を更新しつつサーバーアクションを実行。
   // 失敗したらサーバーの状態を取り直して巻き戻す。
@@ -45,6 +61,52 @@ export default function ScrapbookBoard({ initialItems }: { initialItems: Item[] 
       console.error("更新に失敗しました", e);
       router.refresh();
     });
+  }
+
+  function openForm() {
+    setUrlInput("");
+    setDraft({ title: "", description: "", image: "", category: "" });
+    setFetchError("");
+    setFormStep("url");
+    setShowForm(true);
+  }
+
+  async function handleFetch() {
+    if (!urlInput.trim()) return;
+    setFetching(true);
+    setFetchError("");
+    try {
+      const meta = await fetchMetadataAction(urlInput.trim());
+      // メタデータAPIが取れなかった場合はホスト名だけが返ってくる
+      if (!meta.description && !meta.image && meta.title === hostnameOf(urlInput.trim())) {
+        setFetchError("自動取得できませんでした。手入力で保存できます。");
+      }
+      setDraft({ ...meta, category: "" });
+      setFormStep("edit");
+    } catch {
+      setFetchError("自動取得できませんでした。手入力で保存できます。");
+      setDraft({ title: hostnameOf(urlInput.trim()), description: "", image: "", category: "" });
+      setFormStep("edit");
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  const isReserved = isReservedCategory(draft.category.trim());
+
+  async function handleSave() {
+    if (!draft.category.trim() || isReserved || saving) return;
+    setSaving(true);
+    try {
+      const item = await createItemAction({ url: urlInput.trim(), ...draft });
+      setItems((prev) => [item, ...prev]);
+      setShowForm(false);
+    } catch (e) {
+      console.error("保存に失敗しました", e);
+      setFetchError("保存に失敗しました。もう一度お試しください。");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleDelete(id: string) {
@@ -243,6 +305,56 @@ export default function ScrapbookBoard({ initialItems }: { initialItems: Item[] 
           </div>
         )}
       </main>
+
+      <button style={styles.fab} onClick={openForm} aria-label="追加">
+        <Plus size={26} color="#F5EEDD" />
+      </button>
+
+      {showForm && (
+        <div style={styles.modalOverlay} onClick={() => setShowForm(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <span style={styles.modalTitle}>{formStep === "url" ? "URLを貼る" : "内容を確認"}</span>
+              <button onClick={() => setShowForm(false)} style={styles.modalClose}><X size={18} /></button>
+            </div>
+
+            {formStep === "url" && (
+              <div style={styles.modalBody}>
+                <input ref={urlInputRef} value={urlInput} onChange={(e) => setUrlInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleFetch()} placeholder="https://..." inputMode="url" autoCapitalize="off" autoCorrect="off" style={styles.textInput} />
+                {fetchError && <p style={styles.errorText}>{fetchError}</p>}
+                <button style={styles.primaryBtn} onClick={handleFetch} disabled={fetching || !urlInput.trim()}>
+                  {fetching ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : "情報を取得"}
+                </button>
+              </div>
+            )}
+
+            {formStep === "edit" && (
+              <div style={styles.modalBody}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {draft.image && <img src={draft.image} alt="" style={styles.previewImage} />}
+                <label style={styles.label}>タイトル</label>
+                <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} style={styles.textInput} />
+                <label style={styles.label}>概要</label>
+                <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} rows={3} style={{ ...styles.textInput, resize: "vertical" }} />
+                <label style={styles.label}>画像URL</label>
+                <input value={draft.image} onChange={(e) => setDraft({ ...draft, image: e.target.value })} style={styles.textInput} />
+                <label style={styles.label}>カテゴリ</label>
+                <input value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} placeholder="新規または既存のカテゴリ名" list="category-suggestions" style={styles.textInput} />
+                {isReserved && <p style={styles.errorText}>「すべて」「★重要」「完了」は予約語のため使えません</p>}
+                {fetchError && <p style={styles.errorText}>{fetchError}</p>}
+                <datalist id="category-suggestions">
+                  {Array.from(new Set([...dynamicCategories, ...SUGGESTED_CATEGORIES])).map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+                <button style={styles.primaryBtn} onClick={handleSave} disabled={!draft.category.trim() || isReserved || saving}>
+                  {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : "保存する"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
