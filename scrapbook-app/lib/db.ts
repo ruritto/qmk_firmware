@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 
 // DB接続の唯一の入口。ここを差し替えるだけでホスティング先のマネージドDBに移行できる。
 // - ローカル: DATABASE_URL="file:./dev.db" の SQLite ファイル
@@ -8,8 +9,6 @@ import { PrismaClient } from "@prisma/client";
 function createClient(): PrismaClient {
   const tursoUrl = process.env.TURSO_DATABASE_URL;
   if (tursoUrl) {
-    const { PrismaLibSQL } =
-      require("@prisma/adapter-libsql") as typeof import("@prisma/adapter-libsql");
     const adapter = new PrismaLibSQL({
       url: tursoUrl,
       authToken: process.env.TURSO_AUTH_TOKEN,

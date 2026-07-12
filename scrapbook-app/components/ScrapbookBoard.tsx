@@ -45,9 +45,12 @@ export default function ScrapbookBoard({ initialItems }: { initialItems: Item[] 
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   // サーバー側の再レンダリング (router.refresh など) の結果を取り込む
-  useEffect(() => {
+  // (propsの変化に合わせてレンダー中にstateを揃える公式パターン)
+  const [prevInitialItems, setPrevInitialItems] = useState(initialItems);
+  if (prevInitialItems !== initialItems) {
+    setPrevInitialItems(initialItems);
     setItems(initialItems);
-  }, [initialItems]);
+  }
 
   useEffect(() => {
     if (showForm && formStep === "url" && urlInputRef.current) urlInputRef.current.focus();
