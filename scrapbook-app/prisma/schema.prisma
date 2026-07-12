@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ローカル開発では SQLite ファイル (DATABASE_URL="file:./dev.db")。
+// 本番 (Vercel) では Turso に載せ替える: TURSO_DATABASE_URL / TURSO_AUTH_TOKEN を
+// 設定すると lib/db.ts が libsql アダプタ経由で接続する (schema はそのまま)。
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  url         String
+  title       String
+  description String   @default("")
+  image       String   @default("")
+  category    String
+  important   Boolean  @default(false)
+  archived    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}

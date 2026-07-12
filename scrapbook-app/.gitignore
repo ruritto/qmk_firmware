@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# ローカルDB
+prisma/dev.db
+prisma/dev.db-journal
+
+# 環境変数
+.env
+.env.local
+.env*.local
