@@ -10,8 +10,8 @@
             <iq:uses-permission id="Sensor"/>
         </iq:permissions>
         <iq:languages>
-            <iq:lang>eng</iq:lang>
-            <iq:lang>jpn</iq:lang>
+            <iq:language>eng</iq:language>
+            <iq:language>jpn</iq:language>
         </iq:languages>
         <iq:barrels/>
     </iq:application>
