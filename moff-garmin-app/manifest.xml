@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
-    <iq:application id="a3f8c2d14b6e4f9a8c7d5e2b1a0f9e3c" type="watch-app" name="@Strings.AppName"
+    <iq:application id="4c9d2f7a8e5b4a01b3c6d8e9f0a21745" type="watch-app" name="@Strings.AppName"
                     entry="MoffLinkApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.1.0">
         <iq:products>
             <iq:product id="venusq2"/>
