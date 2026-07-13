@@ -19,6 +19,26 @@ Connect IQ ウォッチアプリ（Monkey C）です。
 構成とは**逆方向**になります。このアプリを使う場合、ESP32 側は
 `esp32/moff_ble_server_example.ino` のように **NimBLE サーバー**に変更してください。
 
+### ⚠️ 対応デバイスに関する重要な注意（2026-07 実機検証で判明）
+
+**Venu Sq 2（無印・非Music版）はこのアプリを使えません。**
+
+- 無印版のファームウェアには Connect IQ の `BluetoothLowEnergy` モジュールが含まれておらず、
+  BLE を使う CIQ アプリは動作しない（実機 FW 2.69 / CIQ 6.0.2 で確認。アプリは
+  「BLE not available」を表示して安全に停止する）
+- 内蔵の心拍転送モードも無印版は **ANT+ のみ**で、Bluetooth 送信不可
+- 対応するのは **Venu Sq 2 Music** や Venu 2/3、Forerunner 245 以降など
+  CIQ BLE 対応モデル
+
+無印 Venu Sq 2 で moff に心拍を送る現実的な選択肢:
+
+1. **市販の BLE 心拍センサーを併用**（胸バンド/アームバンド型、数千円）—
+   ESP32 は当初計画どおり NimBLE Client として標準 Heart Rate Service
+   (0x180D/0x2A37) を受信する。moff 本体の設計変更が最小で済む
+2. **moff 本体に PPG 脈拍センサー（MAX30102 等）を内蔵** — なでている手から
+   直接心拍を取る。時計不要になり「触れ合うと通じ合う」という体験にも合う
+3. CIQ BLE 対応の Garmin に買い替え/追加 — 本アプリがそのまま使える
+
 ### 代替案: Connect IQ アプリなしで済ませる方法
 
 Venu SQ 2 には内蔵の「**心拍転送モード**（Broadcast Heart Rate）」があり、
