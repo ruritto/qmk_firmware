@@ -1,0 +1,9 @@
+<strings>
+    <string id="AppName">moff link</string>
+    <string id="StatusIdle">stopped</string>
+    <string id="StatusScanning">searching moff...</string>
+    <string id="StatusConnecting">connecting...</string>
+    <string id="StatusConnected">connected</string>
+    <string id="StatusSent">sent:</string>
+    <string id="HintSelect">SELECT: scan / disconnect</string>
+</strings>

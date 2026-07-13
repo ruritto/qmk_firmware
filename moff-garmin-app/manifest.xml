@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+    <iq:application id="4c9d2f7a8e5b4a01b3c6d8e9f0a21745" type="watch-app" name="@Strings.AppName"
+                    entry="MoffLinkApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.1.0">
+        <iq:products>
+            <iq:product id="venusq2"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="BluetoothLowEnergy"/>
+            <iq:uses-permission id="Sensor"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+            <iq:language>jpn</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
