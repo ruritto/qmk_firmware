@@ -37,10 +37,13 @@ class MoffLinkApp extends Application.AppBase {
     }
 
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        _bleDelegate = new MoffBleDelegate();
-        BluetoothLowEnergy.setDelegate(_bleDelegate);
-        _bleDelegate.start();
-
+        // 古いファームウェアには BluetoothLowEnergy モジュールが無いことがある。
+        // その場合はクラッシュ (IQ!) ではなく画面にメッセージを出す。
+        if (Toybox has :BluetoothLowEnergy) {
+            _bleDelegate = new MoffBleDelegate();
+            BluetoothLowEnergy.setDelegate(_bleDelegate);
+            _bleDelegate.start();
+        }
         _view = new MoffLinkView(_bleDelegate);
         return [_view, new MoffLinkDelegate(_bleDelegate)];
     }

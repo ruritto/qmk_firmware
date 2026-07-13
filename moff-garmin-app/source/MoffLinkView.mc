@@ -4,9 +4,9 @@ import Toybox.WatchUi;
 
 class MoffLinkView extends WatchUi.View {
 
-    private var _ble as MoffBleDelegate;
+    private var _ble as MoffBleDelegate?;
 
-    function initialize(ble as MoffBleDelegate) {
+    function initialize(ble as MoffBleDelegate?) {
         View.initialize();
         _ble = ble;
     }
@@ -18,12 +18,21 @@ class MoffLinkView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var h = dc.getHeight();
 
+        if (_ble == null) {
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, h * 0.35, Graphics.FONT_SMALL, "BLE not available", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, h * 0.50, Graphics.FONT_TINY, "Update watch firmware", Graphics.TEXT_JUSTIFY_CENTER);
+            return;
+        }
+        var ble = _ble as MoffBleDelegate;
+
         // タイトル
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, h * 0.12, Graphics.FONT_TINY, "moff link", Graphics.TEXT_JUSTIFY_CENTER);
 
         // 心拍数 (大きく中央表示)
-        var hr = _ble.getHeartRate();
+        var hr = ble.getHeartRate();
         var hrText = (hr != null) ? hr.toString() : "--";
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, h * 0.30, Graphics.FONT_NUMBER_THAI_HOT, hrText, Graphics.TEXT_JUSTIFY_CENTER);
@@ -31,11 +40,11 @@ class MoffLinkView extends WatchUi.View {
         dc.drawText(cx, h * 0.55, Graphics.FONT_TINY, "bpm", Graphics.TEXT_JUSTIFY_CENTER);
 
         // 接続状態
-        var state = _ble.getLinkState();
+        var state = ble.getLinkState();
         var statusText;
         var statusColor;
         if (state == LINK_CONNECTED) {
-            var sent = _ble.getLastSentHr();
+            var sent = ble.getLastSentHr();
             statusText = (sent != null)
                 ? WatchUi.loadResource(Rez.Strings.StatusSent) + " " + sent.toString()
                 : WatchUi.loadResource(Rez.Strings.StatusConnected);
