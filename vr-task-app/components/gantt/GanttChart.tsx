@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ja } from "date-fns/locale";
-import type { Task } from "@/lib/types";
+import type { DayEvent, Task } from "@/lib/types";
 import { TEAM_MAP } from "@/lib/types";
 import DeviceIcon from "@/components/DeviceIcon";
 import StatusBadge from "@/components/StatusBadge";
@@ -12,6 +12,7 @@ const DAY_W = 34; // 1日の幅(px)
 const ROW_H = 56; // 1行の高さ(px)
 const BAR_H = 34; // バーの高さ(px)
 const HANDLE_W = 12; // リサイズハンドルの幅(px)
+const EVENT_ROW_H = 88; // 全体予定行の高さ(px) — 縦書き全角6文字が収まる
 const DRAG_THRESHOLD_PX = 5; // これ未満の移動はタップ(編集モーダル)扱い
 
 type DragMode = "move" | "start" | "end";
@@ -26,6 +27,32 @@ interface DragState {
 
 function toDate(s: string): Date {
   return parseISO(s);
+}
+
+/**
+ * 全体予定タイトルを縦積み表示用の行に分割する。
+ * 全角1文字 = 1行、半角は2文字で1行 (縦書きの見た目を全ブラウザで再現するため)。
+ */
+function stackEventTitle(title: string): string[] {
+  const lines: string[] = [];
+  let buf = "";
+  for (const ch of title) {
+    if (/[ -~｡-ﾟ]/.test(ch)) {
+      buf += ch;
+      if (buf.length === 2) {
+        lines.push(buf);
+        buf = "";
+      }
+    } else {
+      if (buf) {
+        lines.push(buf);
+        buf = "";
+      }
+      lines.push(ch);
+    }
+  }
+  if (buf) lines.push(buf);
+  return lines;
 }
 
 function fmt(d: Date): string {
@@ -53,12 +80,18 @@ function barDates(task: Task, drag: DragState | null): { start: Date; end: Date 
 
 export default function GanttChart({
   tasks,
+  eventsByDate,
   onMoveTask,
   onTaskClick,
+  onEventClick,
 }: {
   tasks: Task[];
+  /** 全体予定: "yyyy-MM-dd" → イベント */
+  eventsByDate: Record<string, DayEvent>;
   onMoveTask: (id: string, start: string, end: string) => void;
   onTaskClick: (task: Task) => void;
+  /** 全体予定行の日付セルをタップ (追加・編集) */
+  onEventClick: (date: string) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   // drag は描画用 state。ハンドラからは常に最新値が要るため ref にも同じ値を持つ
@@ -161,10 +194,16 @@ export default function GanttChart({
       style={{ maxHeight: "calc(100dvh - 220px)", minHeight: 240 }}
     >
       <div className="min-w-max">
-        {/* ===== ヘッダー (月 + 日) ===== */}
+        {/* ===== ヘッダー (月 + 日 + 全体予定) ===== */}
         <div className="sticky top-0 z-30 flex">
-          <div className="sticky left-0 z-10 w-[132px] shrink-0 border-b border-r border-hairline bg-surface px-3 py-2 text-xs font-medium text-ink-muted sm:w-[200px]">
-            タスク
+          <div className="sticky left-0 z-10 flex w-[132px] shrink-0 flex-col justify-between border-b border-r border-hairline bg-surface px-3 py-2 sm:w-[200px]">
+            <span className="text-xs font-medium text-ink-muted">タスク</span>
+            <span className="text-[11px] font-medium" style={{ color: "var(--event-red)" }}>
+              全体予定
+              <span className="block text-[9px] font-normal text-ink-muted">
+                日付をタップで追加
+              </span>
+            </span>
           </div>
           <div className="shrink-0 border-b border-hairline bg-surface" style={{ width: daysW }}>
             <div className="flex h-6 border-b border-hairline">
@@ -206,6 +245,41 @@ export default function GanttChart({
                       {format(d, "E", { locale: ja })}
                     </span>
                   </div>
+                );
+              })}
+            </div>
+            {/* 全体予定行: 1日1件、赤字の縦書きで日付の真下に表示 */}
+            <div className="flex border-t border-hairline" style={{ height: EVENT_ROW_H }}>
+              {days.map((d, i) => {
+                const dateStr = fmt(d);
+                const ev = eventsByDate[dateStr];
+                return (
+                  <button
+                    key={i}
+                    onClick={() => onEventClick(dateStr)}
+                    className="flex justify-center border-l border-hairline/60 pt-1 hover:bg-foreground/5"
+                    style={{ width: DAY_W }}
+                    aria-label={`${format(d, "M/d")} の全体予定${ev ? `: ${ev.title}` : "を追加"}`}
+                  >
+                    {ev && (
+                      <span
+                        className="inline-block overflow-hidden"
+                        style={{
+                          color: "var(--event-red)",
+                          maxHeight: EVENT_ROW_H - 8,
+                        }}
+                      >
+                        {stackEventTitle(ev.title).map((line, li) => (
+                          <span
+                            key={li}
+                            className="block text-center text-[12px] font-bold leading-[13px]"
+                          >
+                            {line}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </button>
                 );
               })}
             </div>
