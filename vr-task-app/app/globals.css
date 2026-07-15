@@ -21,6 +21,7 @@
 
   --status-done: #0ca30c;
   --status-in_progress: #fab219;
+  --event-red: #d03b3b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +36,7 @@
     --team-climb: #3987e5;
     --team-wheelchair: #199e70;
     --team-fishing_bike: #c98500;
+    --event-red: #e66767;
   }
 }
 

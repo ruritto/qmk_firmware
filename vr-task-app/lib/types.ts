@@ -36,6 +36,27 @@ export interface Profile {
   team: TeamId | null;
 }
 
+/** 全体予定 (ガント上部に日付単位で表示する短いイベント。1日1件) */
+export interface DayEvent {
+  id: string;
+  date: string; // "yyyy-MM-dd"
+  title: string; // 全角6文字 (半角12文字) まで
+  created_by: string | null;
+  created_at: string;
+}
+
+/** 全体予定タイトルの表示幅 (全角=2, 半角=1) */
+export function eventTitleWidth(s: string): number {
+  let w = 0;
+  for (const ch of s) {
+    // ASCII と半角カナは幅1、それ以外は幅2として数える
+    w += /[ -~｡-ﾟ]/.test(ch) ? 1 : 2;
+  }
+  return w;
+}
+
+export const EVENT_TITLE_MAX_WIDTH = 12;
+
 export interface TeamDef {
   id: TeamId;
   label: string;
@@ -107,12 +128,13 @@ export const STATUS_MAP: Record<TaskStatus, string> = {
   done: "完了",
 };
 
-/** タブ = 「全体」+ 3チーム */
-export type TabId = "all" | TeamId;
+/** タブ = 「全体」+ 3チーム + 「一覧」(班ごとの時系列リスト) */
+export type TabId = "all" | TeamId | "list";
 
 export const TABS: { id: TabId; label: string }[] = [
   { id: "all", label: "全体" },
   ...TEAMS.map((t) => ({ id: t.id as TabId, label: t.label })),
+  { id: "list", label: "一覧" },
 ];
 
 export const NOTE_IMAGE_BUCKET = "note-images";

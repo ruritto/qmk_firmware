@@ -7,6 +7,19 @@ import { isAllowedEmail } from "@/lib/auth";
 export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  // 環境変数が未設定のままデプロイされた場合に、原因不明の 500 ではなく
+  // 何を直せばよいか分かるメッセージを返す
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return new NextResponse(
+      "設定エラー: 環境変数 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY が設定されていません。" +
+        "Vercel の Settings → Environment Variables を確認し、保存後に Redeploy してください。",
+      { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } }
+    );
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

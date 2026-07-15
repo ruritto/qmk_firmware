@@ -13,7 +13,7 @@ export default function TeamTabs({
 }) {
   return (
     <div
-      className="grid grid-cols-4 gap-1 rounded-xl border border-hairline bg-surface p-1"
+      className="grid grid-cols-5 gap-0.5 rounded-xl border border-hairline bg-surface p-1 sm:gap-1"
       role="tablist"
     >
       {TABS.map((tab) => {
@@ -31,9 +31,9 @@ export default function TeamTabs({
                 : "text-ink-secondary hover:bg-foreground/5")
             }
           >
-            {tab.id !== "all" && (
+            {tab.id !== "all" && tab.id !== "list" && (
               <span
-                className="size-2 shrink-0 rounded-full"
+                className="hidden size-2 shrink-0 rounded-full sm:inline-block"
                 style={{ background: `var(--team-${tab.id})` }}
               />
             )}

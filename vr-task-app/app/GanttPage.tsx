@@ -4,20 +4,28 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import GanttChart from "@/components/gantt/GanttChart";
 import TaskModal from "@/components/gantt/TaskModal";
+import EventModal from "@/components/gantt/EventModal";
+import TaskListView from "@/components/TaskListView";
 import TeamTabs from "@/components/TeamTabs";
 import { useTasks, type TaskInput } from "@/lib/hooks/useTasks";
+import { useEvents } from "@/lib/hooks/useEvents";
 import type { TabId, Task, TeamId } from "@/lib/types";
 
 export default function GanttPage({ myTeam }: { myTeam: TeamId | null }) {
   // デフォルト表示はログインユーザーの所属チーム (未設定なら全体)
   const [tab, setTab] = useState<TabId>(myTeam ?? "all");
   const { tasks, loading, error, addTask, updateTask, deleteTask } = useTasks();
+  const { eventsByDate, saveEvent, deleteEvent } = useEvents();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [eventDate, setEventDate] = useState<string | null>(null);
 
   const visibleTasks = useMemo(
-    () => (tab === "all" ? tasks : tasks.filter((t) => t.team === tab)),
+    () =>
+      tab === "all" || tab === "list"
+        ? tasks
+        : tasks.filter((t) => t.team === tab),
     [tasks, tab]
   );
 
@@ -47,7 +55,7 @@ export default function GanttPage({ myTeam }: { myTeam: TeamId | null }) {
 
   // 新規追加時のデフォルトチーム: チームタブ表示中はそのチーム
   const defaultTeam: TeamId =
-    tab !== "all" ? tab : (myTeam ?? "climb");
+    tab !== "all" && tab !== "list" ? tab : (myTeam ?? "climb");
 
   return (
     <div className="space-y-3">
@@ -63,19 +71,24 @@ export default function GanttPage({ myTeam }: { myTeam: TeamId | null }) {
         <div className="flex h-60 items-center justify-center rounded-xl border border-hairline bg-surface text-sm text-ink-muted">
           読み込み中…
         </div>
+      ) : tab === "list" ? (
+        <TaskListView tasks={visibleTasks} onTaskClick={openEdit} />
       ) : (
-        <GanttChart
-          tasks={visibleTasks}
-          onMoveTask={moveTask}
-          onTaskClick={openEdit}
-        />
+        <>
+          <GanttChart
+            tasks={visibleTasks}
+            eventsByDate={eventsByDate}
+            onMoveTask={moveTask}
+            onTaskClick={openEdit}
+            onEventClick={setEventDate}
+          />
+          <p className="text-[11px] text-ink-muted">
+            バーをドラッグで日程移動、両端をドラッグで期間変更、タップで編集。日付の下の欄をタップすると全体予定(赤字)を追加できます。
+          </p>
+        </>
       )}
 
-      <p className="text-[11px] text-ink-muted">
-        バーをドラッグで日程移動、両端をドラッグで期間変更、タップで編集できます。
-      </p>
-
-      {/* タスク追加 FAB */}
+      {/* タスク追加 FAB (全タブ共通) */}
       <button
         onClick={openAdd}
         className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex size-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition active:scale-95 sm:bottom-8"
@@ -92,6 +105,17 @@ export default function GanttPage({ myTeam }: { myTeam: TeamId | null }) {
           onClose={() => setModalOpen(false)}
           onSave={save}
           onDelete={deleteTask}
+        />
+      )}
+
+      {eventDate && (
+        <EventModal
+          key={eventDate}
+          date={eventDate}
+          event={eventsByDate[eventDate] ?? null}
+          onClose={() => setEventDate(null)}
+          onSave={saveEvent}
+          onDelete={deleteEvent}
         />
       )}
     </div>
