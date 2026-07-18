@@ -202,15 +202,23 @@ const SEED = {"period":"2026-07-19 to 2026-09-04","excluded_dates":["2026-07-24"
 const KEY = "natsu-shukudai-v1";
 // 画像から読み取った項目に関する追加メモ（既存データにも後から追記される）
 const EXTRA_OQ = [
-  {id:"q-jukutime", text:"塾の授業時間は時間割画像から読み取りました。前期の国語・社会（7/29〜8/1）の時間は表の読み取りが難しく仮の値です。"},
-  {id:"q-bukatsu", text:"部活予定表の手書きマーク（7/24の✗、7/20・7/25・7/26の○）は意味が確認できなかったため、印刷された予定のみ表示しています。"}
+  {id:"q-jukutime", text:"塾の授業日程・時間は7/18の連絡どおり修正済み（国語=7/24〜27・8/3〜6 17:40〜19:25、社会=7/19〜22 20:55〜21:55・7/29〜8/1 19:30〜20:30）。塾復習タスクの日付は元の計画のままなので、ずれる場合は各タスクの✎で移動してください。"},
+  {id:"q-bukatsu", text:"部活は7/24なし・7/26は9:00〜12:00に修正済み（予定表の手書きマークを反映）。"},
+  {id:"q-eng", text:"英語総整理問題集はp.50開始に修正し、p.50〜59／p.60〜69／p.70〜77に振り直しました。最終ページが異なる場合は各タスクの✎でタイトルを直してください。"}
 ];
 function migrate(s){
   s.customTasks = s.customTasks || [];
   s.customSched = s.customSched || [];
   s.overrides = s.overrides || {};
+  s.schedHidden = s.schedHidden || {};
   s.openQ = s.openQ || [];
-  EXTRA_OQ.forEach(q=>{ if(!s.openQ.some(x=>x.id===q.id)) s.openQ.push({id:q.id, text:q.text, checked:false}); });
+  const OQ_VER = 2; // メモ文面を更新したらこの番号を上げる（1回だけ上書きされる）
+  EXTRA_OQ.forEach(q=>{
+    const ex = s.openQ.find(x=>x.id===q.id);
+    if(!ex) s.openQ.push({id:q.id, text:q.text, checked:false});
+    else if(s.oqVer!==OQ_VER && ex.text!==q.text) ex.text = q.text;
+  });
+  s.oqVer = OQ_VER;
   return s;
 }
 function loadState(){
@@ -235,29 +243,30 @@ const days = SEED.days;
 const dayByDate = {}; days.forEach((d,i)=>dayByDate[d.date]=i);
 const deadlineByDate = {}; (SEED.deadlines||[]).forEach(d=>{ (deadlineByDate[d.date]=deadlineByDate[d.date]||[]).push(d.label); });
 
-// 塾の授業時間（時間割画像より。SEED.juku_periods と同じ並び順）
-const JUKU_TIMES = [
-  {"数学":"17:40〜19:45","理科":"19:50〜20:50"},
-  {"英語":"19:30〜21:35"},
-  {"国語":"17:40〜19:25","社会":"20:55〜21:55"},
-  {"英語":"19:30〜21:35"},
-  {"数学":"17:50〜19:55","国語":"20:00〜21:45"},
-  {"理科":"20:35〜21:35","社会":"19:30〜20:30"}
+// 塾の授業（時間割画像＋2026-07-18の修正連絡に基づく確定版）
+const JUKU_SCHED = [
+  {subject:"数学", start:"2026-07-19", end:"2026-07-22", time:"17:40〜19:45"},
+  {subject:"理科", start:"2026-07-19", end:"2026-07-22", time:"19:50〜20:50"},
+  {subject:"社会", start:"2026-07-19", end:"2026-07-22", time:"20:55〜21:55"},
+  {subject:"国語", start:"2026-07-24", end:"2026-07-27", time:"17:40〜19:25"},
+  {subject:"英語", start:"2026-07-24", end:"2026-07-27", time:"19:30〜21:35"},
+  {subject:"社会", start:"2026-07-29", end:"2026-08-01", time:"19:30〜20:30"},
+  {subject:"国語", start:"2026-08-03", end:"2026-08-06", time:"17:40〜19:25"},
+  {subject:"英語", start:"2026-08-08", end:"2026-08-11", time:"19:30〜21:35"},
+  {subject:"数学", start:"2026-08-22", end:"2026-08-26", time:"17:50〜19:55"},
+  {subject:"国語", start:"2026-08-22", end:"2026-08-26", time:"20:00〜21:45"},
+  {subject:"社会", start:"2026-08-28", end:"2026-08-31", time:"19:30〜20:30"},
+  {subject:"理科", start:"2026-08-28", end:"2026-08-31", time:"20:35〜21:35"}
 ];
-function jukuTimeFor(date, subject){
-  const ps = SEED.juku_periods||[];
-  for(let i=0;i<ps.length;i++){
-    if(date>=ps[i].start && date<=ps[i].end && ps[i].subjects.includes(subject)){
-      const t=(JUKU_TIMES[i]||{})[subject];
-      if(t) return t;
-    }
-  }
-  return null;
+function jukuFor(date){
+  return JUKU_SCHED
+    .filter(j=>date>=j.start && date<=j.end && !state.schedHidden[`juku|${date}|${j.subject}`])
+    .map(j=>({subject:j.subject, time:j.time}));
 }
-// 部活「夏休み中の練習」（予定表画像より。日曜・盆休み・8/17〜18・8/26以降は練習なし）
+// 部活「夏休み中の練習」（予定表画像＋修正連絡：7/24なし・7/26は9:00〜12:00）
 const BUKATSU = (()=>{
   const m = {};
-  ["07-20","07-21","07-22","07-23","07-24","07-25","07-27","07-28","07-30","07-31",
+  ["07-20","07-21","07-22","07-23","07-25","07-26","07-27","07-28","07-30","07-31",
    "08-03","08-04","08-05","08-07","08-08","08-10","08-19","08-20","08-21","08-22",
    "08-24","08-25"].forEach(md=>{ m["2026-"+md]="9:00〜12:00"; });
   m["2026-08-06"]="9:00〜12:00（大湊日直）";
@@ -265,6 +274,15 @@ const BUKATSU = (()=>{
   m["2026-08-01"]="大向フェスティバル";
   return m;
 })();
+function clubFor(date){
+  return state.schedHidden["club|"+date] ? null : (BUKATSU[date]||null);
+}
+// 学校からの修正連絡によるタスク内容の修正（英語総整理問題集はp.50開始）
+const TASK_PATCH = {
+  "t|2026-08-04|0":"総整理問題集 p.50〜59",
+  "t|2026-08-11|0":"総整理問題集 p.60〜69",
+  "t|2026-08-17|0":"総整理問題集 p.70〜77"
+};
 
 // チェック対象アイテムを平坦化（info はチェック対象外、juku_review はチェック可）
 // シードのタスク＋アプリ内で追加した宿題（state.customTasks）をまとめる
@@ -290,8 +308,9 @@ function buildItems(){
   items = [];
   days.forEach(d=>{
     d.tasks.forEach((t,i)=>{
-      items.push(applyOv({id:`t|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"task",
-        category:t.category, subject:t.subject, title:t.title, minutes:t.minutes,
+      const id = `t|${d.date}|${i}`;
+      items.push(applyOv({id, date:d.date, weekday:d.weekday, kind:"task",
+        category:t.category, subject:t.subject, title:TASK_PATCH[id]||t.title, minutes:t.minutes,
         checkable:t.category!=="info"}));
     });
     d.juku_review.forEach((r,i)=>{
@@ -412,9 +431,10 @@ function dayItemsHTML(d, compact){
   (deadlineByDate[d.date]||[]).forEach(l=>{
     parts.push(`<div class="deadline-banner"><span class="flag">🚩</span><span>${esc(l)}</span></div>`);
   });
+  const juku = jukuFor(d.date);
   if(compact){
-    const chips = d.juku_class.map(s=>`<span class="chip">塾：${esc(s)}</span>`);
-    if(BUKATSU[d.date]) chips.push(`<span class="chip club">部活 ${esc(BUKATSU[d.date])}</span>`);
+    const chips = juku.map(j=>`<span class="chip">塾：${esc(j.subject)}</span>`);
+    if(clubFor(d.date)) chips.push(`<span class="chip club">部活 ${esc(clubFor(d.date))}</span>`);
     state.customSched.filter(s=>s.date===d.date).forEach(s=>
       chips.push(`<span class="chip plan">予定 ${esc(s.label)}${s.time?" "+esc(s.time):""}</span>`));
     if(chips.length) parts.push(`<div style="margin-bottom:8px">${chips.join(" ")}</div>`);
@@ -423,19 +443,19 @@ function dayItemsHTML(d, compact){
   const revs  = its.filter(it=>it.kind==="review");
   if(tasks.length) parts.push(tasks.map(it=>taskRowHTML(it)).join(""));
   if(revs.length) parts.push(revs.map(it=>taskRowHTML(it)).join(""));
-  if(!tasks.length && !revs.length && !d.juku_class.length)
+  if(!tasks.length && !revs.length && !juku.length)
     parts.push(`<div class="empty">${d.excluded?"予定日のためお休み":"タスクなし"}</div>`);
   return parts.join("");
 }
 // その日の予定（塾の授業時間・部活・自分で追加した予定）— 日ごとビューの日付の下に表示
 function scheduleCardHTML(d){
   const rows = [];
-  d.juku_class.forEach(s=>{
-    const t = jukuTimeFor(d.date, s);
-    rows.push(`<div class="sched-row"><span class="chip">塾</span><b>${esc(s)}</b><span class="time">${t?esc(t):""}</span></div>`);
+  jukuFor(d.date).forEach(j=>{
+    rows.push(`<div class="sched-row"><span class="chip">塾</span><b>${esc(j.subject)}</b><span class="time">${esc(j.time)}</span><button class="edit-btn" data-edit-builtin="juku|${d.date}|${esc(j.subject)}" aria-label="この予定を編集">✎</button></div>`);
   });
-  if(BUKATSU[d.date])
-    rows.push(`<div class="sched-row"><span class="chip club">部活</span><b>夏休み中の練習</b><span class="time">${esc(BUKATSU[d.date])}</span></div>`);
+  const club = clubFor(d.date);
+  if(club)
+    rows.push(`<div class="sched-row"><span class="chip club">部活</span><b>夏休み中の練習</b><span class="time">${esc(club)}</span><button class="edit-btn" data-edit-builtin="club|${d.date}" aria-label="この予定を編集">✎</button></div>`);
   state.customSched.filter(s=>s.date===d.date).forEach(s=>{
     rows.push(`<div class="sched-row"><span class="chip plan">予定</span><b>${esc(s.label)}</b><span class="time">${esc(s.time||"")}</span><button class="edit-btn" data-edit-sched="${s.id}" aria-label="予定を編集">✎</button></div>`);
   });
@@ -615,6 +635,14 @@ function renderStats(){
         <span class="ops"><button data-oq-edit="${i}">編集</button><button data-oq-del="${i}">削除</button></span>
       </div>`).join(""):'<div class="empty">メモはありません</div>'}
     <button class="oq-add" data-nav="oq-add">＋ メモを追加</button>
+    ${Object.keys(state.schedHidden||{}).length?`<button class="oq-add" data-nav="sched-unhide" style="margin-top:8px; color:var(--juku); border-color:var(--juku)">削除した塾・部活の予定（${Object.keys(state.schedHidden).length}件）をすべて元に戻す</button>`:""}
+  </div>
+  <div class="card">
+    <h2 class="section-h">📎 元の資料画像（タップで拡大表示）</h2>
+    <a href="img-juku.jpeg" target="_blank" rel="noopener"><img src="img-juku.jpeg" alt="塾の夏期講習スケジュール・時間割表" loading="lazy" style="max-width:100%; border:1px solid var(--line); border-radius:10px; display:block"></a>
+    <p class="log-note" style="margin:6px 0 14px">塾：夏期講習スケジュール・高校受験対策 時間割（※国語・社会・部活は7/18の連絡内容で修正済み）</p>
+    <a href="img-bukatsu.jpeg" target="_blank" rel="noopener"><img src="img-bukatsu.jpeg" alt="部活 夏休み中の練習予定表" loading="lazy" style="max-width:100%; border:1px solid var(--line); border-radius:10px; display:block"></a>
+    <p class="log-note" style="margin:6px 0 0">部活：夏休み中の練習予定表</p>
   </div>`;
 }
 
@@ -657,6 +685,17 @@ function renderSheet(){
       ${it.custom?'<button class="sheet-btn danger" data-sheet-del>このタスクを削除</button>':""}
       <button class="sheet-btn" data-sheet-close>閉じる</button>
     </div>`;
+  }else if(ui.sheet.type==="builtin"){
+    const p = ui.sheet.id.split("|"); // "juku|date|subject" or "club|date"
+    const label = p[0]==="juku" ? `塾：${p[2]}` : "部活：夏休み中の練習";
+    root.innerHTML = `<div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet" role="dialog" aria-label="予定の削除">
+      <div class="sheet-title">${esc(label)}</div>
+      <div class="sheet-sub">${fmtMD(p[1])}（${weekdayOf(p[1])}）</div>
+      <button class="sheet-btn danger" data-sheet-del>この日のこの予定を削除する</button>
+      <div class="sheet-sub" style="margin:0">※削除した塾・部活の予定は「達成率」タブの要確認メモ下のボタンでまとめて元に戻せます</div>
+      <button class="sheet-btn" data-sheet-close>閉じる</button>
+    </div>`;
   }else{
     const s = state.customSched.find(x=>x.id===ui.sheet.id);
     if(!s){ ui.sheet=null; root.innerHTML=""; return; }
@@ -683,10 +722,11 @@ function render(){
 
 /* ================= events ================= */
 document.addEventListener("click", ev=>{
-  const t = ev.target.closest("[data-tab],[data-item],[data-nav],[data-goto-day],[data-filter],[data-oq-check],[data-oq-edit],[data-oq-del],[data-edit],[data-edit-sched],[data-sheet-close],[data-sheet-rename],[data-sheet-time],[data-sheet-move],[data-sheet-del]");
+  const t = ev.target.closest("[data-tab],[data-item],[data-nav],[data-goto-day],[data-filter],[data-oq-check],[data-oq-edit],[data-oq-del],[data-edit],[data-edit-sched],[data-edit-builtin],[data-sheet-close],[data-sheet-rename],[data-sheet-time],[data-sheet-move],[data-sheet-del]");
   if(!t) return;
   if(t.dataset.edit){ ui.sheet={type:"item", id:t.dataset.edit}; render(); return; }
   if(t.dataset.editSched){ ui.sheet={type:"sched", id:t.dataset.editSched}; render(); return; }
+  if(t.dataset.editBuiltin){ ui.sheet={type:"builtin", id:t.dataset.editBuiltin}; render(); return; }
   if(t.dataset.sheetClose!==undefined){ ui.sheet=null; render(); return; }
   if(t.dataset.sheetRename!==undefined){ sheetRename(); return; }
   if(t.dataset.sheetTime!==undefined){ sheetTime(); return; }
@@ -716,6 +756,7 @@ document.addEventListener("click", ev=>{
     case "toggle-review": state.includeReview=!state.includeReview; save(); render(); break;
     case "task-add-toggle": ui.addOpen=!ui.addOpen; render(); break;
     case "sched-add-toggle": ui.schedOpen=!ui.schedOpen; render(); break;
+    case "sched-unhide": state.schedHidden={}; save(); render(); break;
     case "oq-add": {
       const v=prompt("メモを追加");
       if(v!==null && v.trim()!==""){ state.openQ.push({id:"q"+Date.now(), text:v.trim(), checked:false}); save(); render(); }
@@ -798,6 +839,11 @@ function sheetMove(){
 }
 function sheetDelete(){
   if(!ui.sheet) return;
+  if(ui.sheet.type==="builtin"){
+    state.schedHidden[ui.sheet.id] = true;
+    save(); ui.sheet=null; render();
+    return;
+  }
   if(ui.sheet.type==="item"){
     const it = itemById[ui.sheet.id];
     if(!it || !it.custom) return;
