@@ -36,10 +36,18 @@ python3 -m http.server 8000
 - 完了状態・完了ログ・要確認メモ・設定はブラウザの **localStorage**（キー: `natsu-shukudai-v1`）に保存され、再読み込みしても保持されます。JSONファイル自体は書き換えません。
 - 保存は端末（ブラウザ）ごとです。別の端末では完了状態は共有されません。
 
-## Vercelでの配信
+## Vercelでの配信（単独プロジェクト）
 
-このアプリのコピーを `vr-task-app/public/shukudai.html` に置いています。既存のVercelプロジェクト（vr-task-app）がこのリポジトリに接続されているため、デプロイ後は `https://<vr-task-appのドメイン>/shukudai.html` でアクセスできます。
-**`summer-homework-app/index.html` を変更したら、`vr-task-app/public/shukudai.html` にもコピーしてください**（`cp summer-homework-app/index.html vr-task-app/public/shukudai.html`）。
+vr-task-app には独自の認証（許可ドメインのGoogleアカウントのみ）が組み込まれているため、このアプリは **vr-task-app とは別のVercelプロジェクト**として配信します。
+
+初回のみ、Vercelダッシュボードで次の設定をしてください：
+
+1. Vercel ダッシュボード → 「Add New…」→「Project」
+2. このリポジトリ（qmk_firmware）を「Import」
+3. **Root Directory** の「Edit」を押して `summer-homework-app` を選択
+4. Framework Preset は「Other」のまま、Build Command / Output Directory は空のまま「Deploy」
+
+以降は master への push のたびに自動デプロイされ、`https://<プロジェクト名>.vercel.app/` でログイン不要でアクセスできます（`index.html` がそのままトップページになります）。
 
 ## 家族からのアクセスについて
 
