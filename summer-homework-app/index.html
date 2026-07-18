@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>夏休み宿題管理</title>
+<style>
+:root{
+  --bg:#F5F1E6; --card:#FFFDF7; --ink:#2A2620; --muted:#7A7264; --line:#E3DCC9;
+  --school:#B8420C; --exam:#2B4570; --deadline:#C1440E; --juku:#6E6A56;
+  --school-bg:#F7E3D4; --exam-bg:#DEE5F0; --deadline-bg:#F8DCD2; --juku-bg:#E9E7DE;
+  --accent:#2B4570; --ok:#3E7C4F; --shadow:0 1px 3px rgba(42,38,32,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#201D18; --card:#2A2721; --ink:#F0EBDD; --muted:#A89F8D; --line:#3B372E;
+    --school:#E8703A; --exam:#8FA9D6; --deadline:#E8654A; --juku:#A8A28C;
+    --school-bg:#3A2A1F; --exam-bg:#232B3A; --deadline-bg:#3A241E; --juku-bg:#2E2C25;
+    --accent:#8FA9D6; --ok:#7FBF8E; --shadow:0 1px 3px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#201D18; --card:#2A2721; --ink:#F0EBDD; --muted:#A89F8D; --line:#3B372E;
+  --school:#E8703A; --exam:#8FA9D6; --deadline:#E8654A; --juku:#A8A28C;
+  --school-bg:#3A2A1F; --exam-bg:#232B3A; --deadline-bg:#3A241E; --juku-bg:#2E2C25;
+  --accent:#8FA9D6; --ok:#7FBF8E; --shadow:0 1px 3px rgba(0,0,0,.35);
+}
+:root[data-theme="light"]{
+  --bg:#F5F1E6; --card:#FFFDF7; --ink:#2A2620; --muted:#7A7264; --line:#E3DCC9;
+  --school:#B8420C; --exam:#2B4570; --deadline:#C1440E; --juku:#6E6A56;
+  --school-bg:#F7E3D4; --exam-bg:#DEE5F0; --deadline-bg:#F8DCD2; --juku-bg:#E9E7DE;
+  --accent:#2B4570; --ok:#3E7C4F; --shadow:0 1px 3px rgba(42,38,32,.08);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:15px; line-height:1.55;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom));
+}
+button{font-family:inherit; font-size:inherit; color:inherit; background:none; border:none; padding:0; cursor:pointer;}
+.wrap{max-width:720px; margin:0 auto; padding:0 12px;}
+/* ---- top header ---- */
+.top{position:sticky; top:0; z-index:20; background:var(--bg); border-bottom:1px solid var(--line);}
+.top-inner{max-width:720px; margin:0 auto; padding:10px 14px; display:flex; align-items:center; gap:10px;}
+.top h1{font-size:16px; font-weight:700; margin:0; letter-spacing:.04em;}
+.top .period{font-size:11px; color:var(--muted); margin-top:1px;}
+.overall-chip{margin-left:auto; display:flex; align-items:center; gap:7px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 12px 4px 6px; box-shadow:var(--shadow);}
+.overall-chip .pct{font-weight:700; font-variant-numeric:tabular-nums; font-size:14px;}
+.overall-chip .lbl{font-size:10px; color:var(--muted);}
+/* ---- tabs ---- */
+.tabs{position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--card); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom);}
+.tabs-inner{max-width:720px; margin:0 auto; display:grid; grid-template-columns:repeat(5,1fr);}
+.tab{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0 7px; font-size:10.5px; color:var(--muted); border-top:2px solid transparent;}
+.tab svg{width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+.tab.active{color:var(--accent); border-top-color:var(--accent); font-weight:700;}
+/* ---- common ---- */
+main{padding-top:12px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); padding:12px 14px; margin-bottom:12px;}
+.section-h{font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:0 0 8px;}
+.nav-row{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+.nav-btn{width:40px; height:40px; border-radius:10px; background:var(--card); border:1px solid var(--line); font-size:16px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);}
+.nav-btn:active{transform:scale(.94);}
+.nav-title{flex:1; text-align:center; font-weight:700;}
+.nav-title .sub{display:block; font-size:11px; font-weight:400; color:var(--muted);}
+.today-btn{font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--accent); font-weight:700;}
+.badge{display:inline-block; font-size:10.5px; font-weight:700; padding:1px 8px; border-radius:999px; vertical-align:1px;}
+.badge.excluded{background:var(--juku-bg); color:var(--juku); border:1px dashed var(--juku);}
+.chip{display:inline-block; font-size:11.5px; font-weight:700; padding:2px 10px; border-radius:999px; background:var(--juku-bg); color:var(--juku);}
+.minutes{font-size:11px; color:var(--muted); white-space:nowrap;}
+.empty{color:var(--muted); font-size:13px; text-align:center; padding:18px 0;}
+/* ---- task rows ---- */
+.task{display:flex; align-items:flex-start; gap:10px; padding:9px 8px 9px 10px; border-radius:10px; border-left:4px solid var(--c,var(--line)); background:var(--cbg,transparent); margin-bottom:6px; width:100%; text-align:left;}
+.task:last-child{margin-bottom:0;}
+.task.cat-school{--c:var(--school); --cbg:var(--school-bg);}
+.task.cat-exam{--c:var(--exam); --cbg:var(--exam-bg);}
+.task.cat-deadline{--c:var(--deadline); --cbg:var(--deadline-bg);}
+.task.cat-juku{--c:var(--juku); --cbg:var(--juku-bg);}
+.task.cat-info{--c:var(--muted); --cbg:transparent; border:1px dashed var(--line); border-left:4px solid var(--muted);}
+.cb{flex:none; width:24px; height:24px; margin-top:1px; border-radius:7px; border:2px solid var(--c,var(--muted)); background:var(--card); display:flex; align-items:center; justify-content:center;}
+.cb svg{width:15px; height:15px; stroke:#fff; stroke-width:3; fill:none; stroke-linecap:round; stroke-linejoin:round; opacity:0;}
+.task.done .cb{background:var(--c); }
+.task.done .cb svg{opacity:1;}
+.task.done .t-title{text-decoration:line-through; opacity:.55;}
+.t-body{flex:1; min-width:0;}
+.t-title{font-size:14px; font-weight:600; overflow-wrap:anywhere;}
+.t-meta{font-size:11px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;}
+.t-cat{font-weight:700; color:var(--c);}
+.due-chip{flex:none; font-size:10.5px; font-weight:700; color:#fff; background:var(--deadline); border-radius:999px; padding:2px 8px; margin-top:3px; white-space:nowrap;}
+.task.urgent{outline:2px solid var(--deadline); outline-offset:-1px;}
+/* ---- week view ---- */
+.wk-bar{height:8px; border-radius:999px; background:var(--line); overflow:hidden; margin-top:4px;}
+.wk-bar i{display:block; height:100%; background:var(--ok); border-radius:999px; transition:width .25s;}
+.day-card-h{display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:2px 0 8px; font-weight:700;}
+.day-card-h .dow{font-size:12px; color:var(--muted); font-weight:400;}
+.day-card-h .arrow{margin-left:auto; color:var(--muted); font-size:12px; font-weight:400;}
+.day-card-h.sun .dnum{color:var(--deadline);}
+.day-card-h.sat .dnum{color:var(--exam);}
+.card.is-excluded{background:repeating-linear-gradient(-45deg, var(--card), var(--card) 8px, var(--bg) 8px, var(--bg) 10px);}
+.deadline-banner{display:flex; gap:8px; align-items:flex-start; background:var(--deadline-bg); border-left:4px solid var(--deadline); border-radius:10px; padding:8px 10px; margin-bottom:8px; font-size:13px; font-weight:600; color:var(--ink);}
+.deadline-banner .flag{flex:none;}
+/* ---- filter chips ---- */
+.filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+.f-chip{font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--muted);}
+.f-chip.active{border-color:var(--accent); color:var(--accent); background:var(--exam-bg);}
+/* ---- stats ---- */
+.donut-wrap{display:flex; align-items:center; gap:18px;}
+.donut-nums .big{font-size:30px; font-weight:800; font-variant-numeric:tabular-nums;}
+.donut-nums .small{font-size:12px; color:var(--muted);}
+.hbar-row{display:grid; grid-template-columns:minmax(72px,auto) 1fr 44px; gap:8px; align-items:center; margin-bottom:7px; font-size:12.5px;}
+.hbar-row .lab{font-weight:600; overflow-wrap:anywhere;}
+.hbar-row .val{text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); font-size:12px;}
+.hbar{height:10px; border-radius:999px; background:var(--line); overflow:hidden;}
+.hbar i{display:block; height:100%; border-radius:999px; background:var(--accent);}
+.toggle-row{display:flex; align-items:center; gap:10px; padding:4px 0;}
+.toggle-row .desc{font-size:11px; color:var(--muted);}
+.switch{flex:none; width:44px; height:26px; border-radius:999px; background:var(--line); position:relative; transition:background .15s;}
+.switch i{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:var(--card); box-shadow:var(--shadow); transition:left .15s;}
+.switch.on{background:var(--ok);}
+.switch.on i{left:21px;}
+/* ---- open questions ---- */
+.oq{display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px dashed var(--line);}
+.oq:last-of-type{border-bottom:none;}
+.oq .txt{flex:1; font-size:13px;}
+.oq.checked .txt{text-decoration:line-through; opacity:.5;}
+.oq .ops{flex:none; display:flex; gap:6px;}
+.oq .ops button{font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:2px 8px; background:var(--card);}
+.oq-add{margin-top:8px; font-size:12px; font-weight:700; color:var(--accent); border:1px dashed var(--accent); border-radius:8px; padding:6px 12px; width:100%;}
+/* ---- log ---- */
+.log-note{font-size:11.5px; color:var(--muted); margin-bottom:10px;}
+.log-row{display:flex; gap:10px; align-items:flex-start; padding:8px 2px; border-bottom:1px solid var(--line); font-size:13px;}
+.log-row:last-child{border-bottom:none;}
+.log-when{flex:none; width:86px; font-variant-numeric:tabular-nums; color:var(--muted); font-size:11.5px; padding-top:2px;}
+.log-act{flex:none; font-size:10.5px; font-weight:700; border-radius:999px; padding:1px 8px; margin-top:1px;}
+.log-act.done{background:var(--ok); color:#fff;}
+.log-act.undo{background:none; border:1px solid var(--deadline); color:var(--deadline);}
+.log-body{flex:1; min-width:0; overflow-wrap:anywhere;}
+.log-body .sub{display:block; font-size:11px; color:var(--muted);}
+@media (min-width:600px){
+  .week-days{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .week-days .card{margin-bottom:0;}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <h1>夏休み宿題管理</h1>
+      <div class="period" id="periodLabel"></div>
+    </div>
+    <div class="overall-chip" title="全体の達成率">
+      <svg id="miniDonut" width="30" height="30" viewBox="0 0 36 36" aria-hidden="true"></svg>
+      <div><span class="pct" id="miniPct">0%</span><span class="lbl"> 達成</span></div>
+    </div>
+  </div>
+</header>
+<main class="wrap" id="view" aria-live="polite"></main>
+<nav class="tabs" aria-label="メインメニュー">
+  <div class="tabs-inner" id="tabbar"></div>
+</nav>
+<script>
+const SEED = {"period":"2026-07-19 to 2026-09-04","excluded_dates":["2026-07-24","2026-07-25","2026-07-29","2026-08-01"],"deadlines":[{"date":"2026-07-23","label":"社会：税の作文 下書き（塾なし日）"},{"date":"2026-07-28","label":"社会：税の作文 清書・提出準備（塾なし日）"},{"date":"2026-08-31","label":"国語キュビナ提出／学校説明会報告書提出"},{"date":"2026-09-02","label":"理科まとめ問題集提出／試験：国語・理科・技家"},{"date":"2026-09-03","label":"数学学習ノート③提出／試験：美術・数学・社会"},{"date":"2026-09-04","label":"英語総整理問題集提出／試験：英語・音楽・保体"}],"juku_periods":[{"subjects":["数学","理科"],"start":"2026-07-19","end":"2026-07-22"},{"subjects":["英語"],"start":"2026-07-24","end":"2026-07-27"},{"subjects":["国語","社会"],"start":"2026-07-29","end":"2026-08-01"},{"subjects":["英語"],"start":"2026-08-08","end":"2026-08-11"},{"subjects":["数学","国語"],"start":"2026-08-22","end":"2026-08-26"},{"subjects":["理科","社会"],"start":"2026-08-28","end":"2026-08-31"}],"days":[{"date":"2026-07-19","weekday":"日","excluded":false,"juku_class":["数学","理科"],"juku_review":[],"tasks":[{"category":"school","subject":"家庭","title":"幼少期のエピソードを家族に聞く","minutes":null},{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ①","minutes":null}]},{"date":"2026-07-20","weekday":"月","excluded":false,"juku_class":["数学","理科"],"juku_review":[{"subject":"数学","source_date":"2026-07-19","shifted":false},{"subject":"理科","source_date":"2026-07-19","shifted":false}],"tasks":[{"category":"school","subject":"国語","title":"キュビナ 1回目","minutes":17}]},{"date":"2026-07-21","weekday":"火","excluded":false,"juku_class":["数学","理科"],"juku_review":[{"subject":"数学","source_date":"2026-07-20","shifted":false},{"subject":"理科","source_date":"2026-07-20","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"キュビナ 1回目","minutes":10}]},{"date":"2026-07-22","weekday":"水","excluded":false,"juku_class":["数学","理科"],"juku_review":[{"subject":"数学","source_date":"2026-07-21","shifted":false},{"subject":"理科","source_date":"2026-07-21","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ②","minutes":null}]},{"date":"2026-07-23","weekday":"木","excluded":false,"juku_class":[],"juku_review":[{"subject":"数学","source_date":"2026-07-22","shifted":false},{"subject":"理科","source_date":"2026-07-22","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"税の作文（下書き）※塾ない日","minutes":null}]},{"date":"2026-07-24","weekday":"金","excluded":true,"juku_class":["英語"],"juku_review":[],"tasks":[]},{"date":"2026-07-25","weekday":"土","excluded":true,"juku_class":["英語"],"juku_review":[],"tasks":[]},{"date":"2026-07-26","weekday":"日","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-07-24","shifted":true},{"subject":"英語","source_date":"2026-07-25","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"キュビナ 2回目","minutes":15}]},{"date":"2026-07-27","weekday":"月","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-07-26","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ③","minutes":null}]},{"date":"2026-07-28","weekday":"火","excluded":false,"juku_class":[],"juku_review":[{"subject":"英語","source_date":"2026-07-27","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"税の作文（清書・提出準備）※塾ない日","minutes":null}]},{"date":"2026-07-29","weekday":"水","excluded":true,"juku_class":["国語","社会"],"juku_review":[],"tasks":[]},{"date":"2026-07-30","weekday":"木","excluded":false,"juku_class":["国語","社会"],"juku_review":[{"subject":"国語","source_date":"2026-07-29","shifted":false},{"subject":"社会","source_date":"2026-07-29","shifted":false}],"tasks":[{"category":"school","subject":"国語","title":"小説を読む","minutes":30}]},{"date":"2026-07-31","weekday":"金","excluded":false,"juku_class":["国語","社会"],"juku_review":[{"subject":"国語","source_date":"2026-07-30","shifted":false},{"subject":"社会","source_date":"2026-07-30","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ④","minutes":null}]},{"date":"2026-08-01","weekday":"土","excluded":true,"juku_class":["国語","社会"],"juku_review":[],"tasks":[]},{"date":"2026-08-02","weekday":"日","excluded":false,"juku_class":[],"juku_review":[{"subject":"国語","source_date":"2026-07-31","shifted":true},{"subject":"社会","source_date":"2026-07-31","shifted":true},{"subject":"国語","source_date":"2026-08-01","shifted":false},{"subject":"社会","source_date":"2026-08-01","shifted":false}],"tasks":[]},{"date":"2026-08-03","weekday":"月","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"数学","title":"ワーク 白紙4p","minutes":null}]},{"date":"2026-08-04","weekday":"火","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"英語","title":"総整理問題集 p.30〜39","minutes":null}]},{"date":"2026-08-05","weekday":"水","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"理科","title":"教科書（生物）p.94〜105","minutes":null}]},{"date":"2026-08-06","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ⑤","minutes":null}]},{"date":"2026-08-07","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"社会","title":"歴史教科書p.186〜191＋プリントNo.10・11","minutes":null}]},{"date":"2026-08-08","weekday":"土","excluded":false,"juku_class":["英語"],"juku_review":[],"tasks":[]},{"date":"2026-08-09","weekday":"日","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-08-08","shifted":false}],"tasks":[]},{"date":"2026-08-10","weekday":"月","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-08-09","shifted":false}],"tasks":[{"category":"school","subject":"数学","title":"ワーク 白紙 残り4p","minutes":null}]},{"date":"2026-08-11","weekday":"火","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-08-10","shifted":false}],"tasks":[{"category":"exam","subject":"英語","title":"総整理問題集 p.40〜49","minutes":null}]},{"date":"2026-08-12","weekday":"水","excluded":false,"juku_class":[],"juku_review":[{"subject":"英語","source_date":"2026-08-11","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ⑥","minutes":null}]},{"date":"2026-08-13","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"理科","title":"生物p.106〜125仕上げ＋化学p.12〜20","minutes":null}]},{"date":"2026-08-14","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"社会","title":"公民プリントNo.12〜14","minutes":null},{"category":"school","subject":"英語","title":"Real Life p.27","minutes":null}]},{"date":"2026-08-15","weekday":"土","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"国語","title":"文法 p.44〜53","minutes":null}]},{"date":"2026-08-16","weekday":"日","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"数学","title":"ワーク 丸つけ4p","minutes":null}]},{"date":"2026-08-17","weekday":"月","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"英語","title":"総整理問題集 p.50〜57","minutes":null}]},{"date":"2026-08-18","weekday":"火","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ⑦","minutes":null}]},{"date":"2026-08-19","weekday":"水","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"理科","title":"化学p.21〜39仕上げ","minutes":null}]},{"date":"2026-08-20","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"社会","title":"教科書p.62〜95","minutes":null},{"category":"exam","subject":"技術家庭","title":"技術p.130,131,143,144","minutes":null}]},{"date":"2026-08-21","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"国語","title":"読解1作品目","minutes":null},{"category":"exam","subject":"家庭","title":"教科書p.208〜225","minutes":null}]},{"date":"2026-08-22","weekday":"土","excluded":false,"juku_class":["数学","国語"],"juku_review":[],"tasks":[]},{"date":"2026-08-23","weekday":"日","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-22","shifted":false},{"subject":"国語","source_date":"2026-08-22","shifted":false}],"tasks":[]},{"date":"2026-08-24","weekday":"月","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-23","shifted":false},{"subject":"国語","source_date":"2026-08-23","shifted":false}],"tasks":[{"category":"school","subject":"数学","title":"ワーク 丸つけ 残り4p","minutes":null},{"category":"exam","subject":"社会","title":"対策プリント（前半3p）","minutes":null}]},{"date":"2026-08-25","weekday":"火","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-24","shifted":false},{"subject":"国語","source_date":"2026-08-24","shifted":false}],"tasks":[{"category":"school","subject":"英語","title":"オンライン英会話①","minutes":null}]},{"date":"2026-08-26","weekday":"水","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-25","shifted":false},{"subject":"国語","source_date":"2026-08-25","shifted":false}],"tasks":[{"category":"exam","subject":"美術","title":"試験プリント4枚読み込み","minutes":null}]},{"date":"2026-08-27","weekday":"木","excluded":false,"juku_class":[],"juku_review":[{"subject":"数学","source_date":"2026-08-26","shifted":false},{"subject":"国語","source_date":"2026-08-26","shifted":false}],"tasks":[{"category":"exam","subject":"理科","title":"まとめ問題集 p.10〜19","minutes":null},{"category":"exam","subject":"国語","title":"漢字プリント書き取り","minutes":null}]},{"date":"2026-08-28","weekday":"金","excluded":false,"juku_class":["理科","社会"],"juku_review":[],"tasks":[]},{"date":"2026-08-29","weekday":"土","excluded":false,"juku_class":["理科","社会"],"juku_review":[{"subject":"理科","source_date":"2026-08-28","shifted":false},{"subject":"社会","source_date":"2026-08-28","shifted":false}],"tasks":[{"category":"exam","subject":"理科","title":"まとめ問題集 p.30〜49＋カラープリントNo.7","minutes":null},{"category":"exam","subject":"社会","title":"対策プリント（残り3p）","minutes":null}]},{"date":"2026-08-30","weekday":"日","excluded":false,"juku_class":["理科","社会"],"juku_review":[{"subject":"理科","source_date":"2026-08-29","shifted":false},{"subject":"社会","source_date":"2026-08-29","shifted":false}],"tasks":[{"category":"exam","subject":"国語","title":"キュビナ 試験対策分","minutes":56},{"category":"exam","subject":"音楽","title":"花・ボレロ・校歌など確認","minutes":null},{"category":"exam","subject":"美術","title":"鑑賞課題（息抜きに）","minutes":null}]},{"date":"2026-08-31","weekday":"月","excluded":false,"juku_class":["理科","社会"],"juku_review":[{"subject":"理科","source_date":"2026-08-30","shifted":false},{"subject":"社会","source_date":"2026-08-30","shifted":false}],"tasks":[{"category":"deadline","subject":"国語","title":"①キュビナワークブック 提出","minutes":null},{"category":"deadline","subject":"学年","title":"学校説明会参加報告書 提出","minutes":null},{"category":"exam","subject":"数学","title":"学習ノート③仕上げ・丸付け・直し","minutes":null},{"category":"exam","subject":"理科","title":"まとめ問題集 p.93〜95","minutes":null}]},{"date":"2026-09-01","weekday":"火","excluded":false,"juku_class":[],"juku_review":[{"subject":"理科","source_date":"2026-08-31","shifted":false},{"subject":"社会","source_date":"2026-08-31","shifted":false}],"tasks":[{"category":"exam","subject":"美術","title":"板書10問おさらい","minutes":null},{"category":"exam","subject":"数学","title":"2次方程式・解の公式 最終確認","minutes":null},{"category":"exam","subject":"社会","title":"重要語（社会権・参政権等）総チェック","minutes":null}]},{"date":"2026-09-02","weekday":"水","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"deadline","subject":"理科","title":"まとめ問題集（丸付け済） 提出","minutes":null},{"category":"info","subject":"試験","title":"国語・理科・技術家庭","minutes":null}]},{"date":"2026-09-03","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"deadline","subject":"数学","title":"学習ノート③ 提出（終学活）","minutes":null},{"category":"info","subject":"試験","title":"美術・数学・社会","minutes":null}]},{"date":"2026-09-04","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"deadline","subject":"英語","title":"総整理問題集（丸付け済） 提出","minutes":null},{"category":"info","subject":"試験","title":"英語・音楽・保体","minutes":null}]}],"open_questions":["2026-07-24分の塾復習は本来2026-07-25に入る予定でしたが、予定ありのため2026-07-26にずらしています。","2026-07-31分の塾復習は本来2026-08-01に入る予定でしたが、予定ありのため2026-08-02にずらしています。","8/23（日）は塾の『開室日』表記で、通常授業か任意の自習室開放か区別がつきませんでした。ここでは8/22〜26の授業期間内として扱い、復習も通常通り組み込んでいます。","理科カラープリントNo.7の分量が不明なため、8/29に仮置きしています。","英語Real Life英語 p.27の所要時間が不明なため、社会の課題と同日にまとめています。"]};
+</script>
+<script>
+"use strict";
+/* ================= storage ================= */
+const KEY = "natsu-shukudai-v1";
+function loadState(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const s = JSON.parse(raw); if(s && s.completed) return s; }
+  }catch(e){}
+  // 初回起動：シードJSONから初期化（以降はlocalStorageを優先）
+  return {
+    completed:{}, log:[], includeReview:true,
+    openQ:(SEED.open_questions||[]).map((t,i)=>({id:"q"+i, text:t, checked:false})),
+    seededAt:new Date().toISOString()
+  };
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+const state = loadState();
+const ui = { tab:"day", dayIdx:0, weekIdx:0, todoFilter:"all" };
+
+/* ================= data model ================= */
+const CAT_LABEL = {school:"学校の宿題", exam:"期末試験", deadline:"締切・提出", juku:"塾の復習", info:"参考"};
+const days = SEED.days;
+const dayByDate = {}; days.forEach((d,i)=>dayByDate[d.date]=i);
+const deadlineByDate = {}; (SEED.deadlines||[]).forEach(d=>{ (deadlineByDate[d.date]=deadlineByDate[d.date]||[]).push(d.label); });
+
+// チェック対象アイテムを平坦化（info はチェック対象外、juku_review はチェック可）
+const items = [];
+days.forEach(d=>{
+  d.tasks.forEach((t,i)=>{
+    items.push({id:`t|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"task",
+      category:t.category, subject:t.subject, title:t.title, minutes:t.minutes,
+      checkable:t.category!=="info"});
+  });
+  d.juku_review.forEach((r,i)=>{
+    const md = fmtMD(r.source_date);
+    items.push({id:`r|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"review",
+      category:"juku", subject:r.subject,
+      title:`塾復習：${r.subject}（${md}授業分${r.shifted?"・振替":""}）`,
+      minutes:null, checkable:true});
+  });
+});
+const itemById = {}; items.forEach(it=>itemById[it.id]=it);
+
+// 週（日〜土）を構築
+const weeks = [];
+{
+  let cur = null;
+  days.forEach((d,i)=>{
+    if(d.weekday==="日" || cur===null){ cur = {dayIdxs:[]}; weeks.push(cur); }
+    cur.dayIdxs.push(i);
+  });
+}
+function weekLabel(w){
+  const a=days[w.dayIdxs[0]].date, b=days[w.dayIdxs[w.dayIdxs.length-1]].date;
+  return `${fmtMD(a)} 〜 ${fmtMD(b)}`;
+}
+
+/* ================= helpers ================= */
+function parseDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function fmtMD(s){ const [,m,d]=s.split("-").map(Number); return `${m}/${d}`; }
+function todayStr(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; }
+function daysUntil(dateStr){ return Math.round((parseDate(dateStr)-parseDate(todayStr()))/86400000); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function pct(done,total){ return total===0?0:Math.round(done/total*100); }
+
+function countable(it){ return it.checkable && (state.includeReview || it.kind!=="review"); }
+function rate(list){
+  const t=list.filter(countable);
+  return {done:t.filter(it=>state.completed[it.id]).length, total:t.length};
+}
+function overallRate(){ return rate(items); }
+function weekRate(w){ return rate(items.filter(it=> w.dayIdxs.some(i=>days[i].date===it.date))); }
+
+/* ================= actions ================= */
+function toggleItem(id){
+  const it = itemById[id]; if(!it || !it.checkable) return;
+  const now = new Date().toISOString();
+  if(state.completed[id]){
+    delete state.completed[id];
+    state.log.push({at:now, action:"undo", id, title:it.title, subject:it.subject, taskDate:it.date});
+  }else{
+    state.completed[id]=true;
+    state.log.push({at:now, action:"done", id, title:it.title, subject:it.subject, taskDate:it.date});
+  }
+  save(); render();
+}
+
+/* ================= rendering ================= */
+const view = document.getElementById("view");
+const TABS = [
+  {id:"day",  label:"日ごと", icon:'<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>'},
+  {id:"week", label:"週ごと", icon:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 5v15M13 5v15M18 5v15"/>'},
+  {id:"todo", label:"未完了", icon:'<path d="M4 6h12M4 12h12M4 18h8"/><path d="M18 16l2 2 3-3"/>'},
+  {id:"stats",label:"達成率", icon:'<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.5 4"/>'},
+  {id:"log",  label:"ログ", icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'},
+];
+function renderTabs(){
+  document.getElementById("tabbar").innerHTML = TABS.map(t=>
+    `<button class="tab ${ui.tab===t.id?"active":""}" data-tab="${t.id}" aria-label="${t.label}">
+       <svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg>${t.label}</button>`).join("");
+}
+function donutSVG(p, size, stroke){
+  const r=15.9155, c=100;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 36 36" role="img" aria-label="達成率 ${p}%">
+    <circle cx="18" cy="18" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>
+    <circle cx="18" cy="18" r="${r}" fill="none" stroke="var(--ok)" stroke-width="${stroke}"
+      stroke-dasharray="${p} ${c-p}" stroke-dashoffset="25" stroke-linecap="round"/>
+  </svg>`;
+}
+function renderHeader(){
+  const o=overallRate(), p=pct(o.done,o.total);
+  document.getElementById("miniPct").textContent = p+"%";
+  document.getElementById("miniDonut").outerHTML = donutSVG(p,30,5).replace("<svg ",'<svg id="miniDonut" ');
+  document.getElementById("periodLabel").textContent = SEED.period.replace(" to "," 〜 ");
+}
+function taskRowHTML(it, opts){
+  opts = opts||{};
+  const done = !!state.completed[it.id];
+  const cls = `task cat-${it.category} ${done?"done":""} ${opts.urgent?"urgent":""}`;
+  const meta = [];
+  meta.push(`<span class="t-cat">${CAT_LABEL[it.category]}</span>`);
+  if(it.subject) meta.push(`<span>${esc(it.subject)}</span>`);
+  if(opts.showDate) meta.push(`<span>${fmtMD(it.date)}(${it.weekday})</span>`);
+  if(it.minutes) meta.push(`<span class="minutes">約${it.minutes}分</span>`);
+  const cb = it.checkable
+    ? `<span class="cb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></svg></span>`
+    : `<span class="cb" style="border-style:dashed; opacity:.45" aria-hidden="true"></span>`;
+  let due = "";
+  if(opts.dueChip){
+    const n = daysUntil(it.date);
+    due = `<span class="due-chip">${n<0?`${-n}日超過`:n===0?"今日まで":`あと${n}日`}</span>`;
+  }
+  const tag = it.checkable?"button":"div";
+  const attr = it.checkable?` data-item="${it.id}" role="checkbox" aria-checked="${done}"`:"";
+  return `<${tag} class="${cls}"${attr}>${cb}<span class="t-body"><span class="t-title">${esc(it.title)}</span><span class="t-meta">${meta.join("")}</span></span>${due}</${tag}>`;
+}
+function dayItemsHTML(d, compact){
+  const its = items.filter(it=>it.date===d.date);
+  const parts = [];
+  (deadlineByDate[d.date]||[]).forEach(l=>{
+    parts.push(`<div class="deadline-banner"><span class="flag">🚩</span><span>${esc(l)}</span></div>`);
+  });
+  if(d.juku_class.length)
+    parts.push(`<div style="margin-bottom:8px">${d.juku_class.map(s=>`<span class="chip">塾：${esc(s)}</span>`).join(" ")}</div>`);
+  const tasks = its.filter(it=>it.kind==="task");
+  const revs  = its.filter(it=>it.kind==="review");
+  if(tasks.length) parts.push(tasks.map(it=>taskRowHTML(it)).join(""));
+  if(revs.length) parts.push(revs.map(it=>taskRowHTML(it)).join(""));
+  if(!tasks.length && !revs.length && !d.juku_class.length)
+    parts.push(`<div class="empty">${d.excluded?"予定日のためお休み":"タスクなし"}</div>`);
+  return parts.join("");
+}
+
+/* ---- 日ごと ---- */
+function renderDay(){
+  const d = days[ui.dayIdx];
+  const r = rate(items.filter(it=>it.date===d.date));
+  const isToday = d.date===todayStr();
+  view.innerHTML = `
+  <div class="nav-row">
+    <button class="nav-btn" data-nav="day-prev" ${ui.dayIdx===0?"disabled style='opacity:.3'":""} aria-label="前の日">◀</button>
+    <div class="nav-title">${fmtMD(d.date)}（${d.weekday}）${isToday?'<span class="badge" style="background:var(--exam-bg);color:var(--exam)">今日</span>':""}
+      ${d.excluded?'<span class="badge excluded">📅 予定あり</span>':""}
+      <span class="sub">${r.total?`この日の達成 ${r.done}/${r.total}`:"チェック対象なし"}</span>
+    </div>
+    <button class="nav-btn" data-nav="day-next" ${ui.dayIdx===days.length-1?"disabled style='opacity:.3'":""} aria-label="次の日">▶</button>
+    <button class="today-btn" data-nav="day-today">今日</button>
+  </div>
+  <div class="card ${d.excluded?"is-excluded":""}">
+    ${d.excluded?'<p style="margin:0 0 10px;font-size:12px;color:var(--juku)">この日は予定ありのため、学習は入れていません。</p>':""}
+    ${dayItemsHTML(d)}
+  </div>`;
+}
+
+/* ---- 週ごと ---- */
+function renderWeek(){
+  const w = weeks[ui.weekIdx];
+  const r = weekRate(w), p = pct(r.done,r.total);
+  view.innerHTML = `
+  <div class="nav-row">
+    <button class="nav-btn" data-nav="week-prev" ${ui.weekIdx===0?"disabled style='opacity:.3'":""} aria-label="前の週">◀</button>
+    <div class="nav-title">第${ui.weekIdx+1}週　${weekLabel(w)}
+      <span class="sub">達成率 ${p}%（${r.done}/${r.total}）</span>
+      <div class="wk-bar"><i style="width:${p}%"></i></div>
+    </div>
+    <button class="nav-btn" data-nav="week-next" ${ui.weekIdx===weeks.length-1?"disabled style='opacity:.3'":""} aria-label="次の週">▶</button>
+  </div>
+  <div class="week-days">
+  ${w.dayIdxs.map(i=>{
+    const d=days[i];
+    const cls = d.weekday==="日"?"sun":d.weekday==="土"?"sat":"";
+    return `<div class="card ${d.excluded?"is-excluded":""}">
+      <button class="day-card-h ${cls}" data-goto-day="${i}">
+        <span class="dnum">${fmtMD(d.date)}</span><span class="dow">（${d.weekday}）</span>
+        ${d.date===todayStr()?'<span class="badge" style="background:var(--exam-bg);color:var(--exam)">今日</span>':""}
+        ${d.excluded?'<span class="badge excluded">予定あり</span>':""}
+        <span class="arrow">日表示へ ›</span>
+      </button>
+      ${dayItemsHTML(d,true)}
+    </div>`;
+  }).join("")}
+  </div>`;
+}
+
+/* ---- 未完了 ---- */
+function renderTodo(){
+  const FILTERS=[["all","すべて"],["school","学校"],["exam","期末試験"],["deadline","締切"],["juku","塾復習"]];
+  let list = items.filter(it=>it.checkable && !state.completed[it.id]);
+  if(ui.todoFilter!=="all") list = list.filter(it=>it.category===ui.todoFilter);
+  // 締切カテゴリ優先 → 日付昇順
+  list.sort((a,b)=>{
+    const ad=a.category==="deadline"?0:1, bd=b.category==="deadline"?0:1;
+    if(ad!==bd) return ad-bd;
+    return a.date<b.date?-1:a.date>b.date?1:0;
+  });
+  view.innerHTML = `
+  <div class="filters">${FILTERS.map(([k,l])=>`<button class="f-chip ${ui.todoFilter===k?"active":""}" data-filter="${k}">${l}</button>`).join("")}</div>
+  <div class="card">
+    <h2 class="section-h">未完了タスク（${list.length}件）　※締切カテゴリと期日が近いものを上に表示</h2>
+    ${list.length?list.map(it=>{
+      const n=daysUntil(it.date);
+      const urgent = it.category==="deadline" || n<=3;
+      return taskRowHTML(it,{showDate:true, urgent:urgent&&n<=3, dueChip:it.category==="deadline"||n<=3});
+    }).join(""):'<div class="empty">🎉 未完了のタスクはありません！</div>'}
+  </div>`;
+}
+
+/* ---- 達成率 ---- */
+function renderStats(){
+  const o=overallRate(), p=pct(o.done,o.total);
+  const subjects={};
+  items.filter(countable).forEach(it=>{
+    const s=it.subject||"その他";
+    subjects[s]=subjects[s]||{done:0,total:0};
+    subjects[s].total++; if(state.completed[it.id]) subjects[s].done++;
+  });
+  const subjRows = Object.entries(subjects).sort((a,b)=>b[1].total-a[1].total).map(([s,v])=>{
+    const sp=pct(v.done,v.total);
+    return `<div class="hbar-row"><span class="lab">${esc(s)}</span><span class="hbar"><i style="width:${sp}%"></i></span><span class="val">${sp}%</span></div>`;
+  }).join("");
+  view.innerHTML = `
+  <div class="card">
+    <h2 class="section-h">全体の達成率</h2>
+    <div class="donut-wrap">
+      ${donutSVG(p,110,4)}
+      <div class="donut-nums">
+        <div class="big">${p}%</div>
+        <div class="small">${o.done} / ${o.total} タスク完了</div>
+      </div>
+    </div>
+    <div class="toggle-row" style="margin-top:12px; border-top:1px solid var(--line); padding-top:12px;">
+      <button class="switch ${state.includeReview?"on":""}" data-nav="toggle-review" role="switch" aria-checked="${state.includeReview}" aria-label="塾の復習を達成率に含める"><i></i></button>
+      <div>塾の復習を達成率に含める<div class="desc">OFFにすると school / exam / deadline のみで計算します</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2 class="section-h">週ごとの達成率</h2>
+    ${weeks.map((w,i)=>{
+      const r=weekRate(w), wp=pct(r.done,r.total);
+      return `<div class="hbar-row"><span class="lab">第${i+1}週 ${weekLabel(w)}</span><span class="hbar"><i style="width:${wp}%"></i></span><span class="val">${r.total?wp+"%":"—"}</span></div>`;
+    }).join("")}
+  </div>
+  <div class="card">
+    <h2 class="section-h">教科ごとの達成率</h2>
+    ${subjRows}
+  </div>
+  <div class="card">
+    <h2 class="section-h">⚠️ 要確認メモ（分量・日程が未確定の項目）</h2>
+    ${state.openQ.length?state.openQ.map((q,i)=>`
+      <div class="oq ${q.checked?"checked":""}">
+        <button class="cb" style="--c:var(--ok); ${q.checked?"background:var(--ok)":""}" data-oq-check="${i}" role="checkbox" aria-checked="${q.checked}" aria-label="確認済みにする"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;opacity:${q.checked?1:0}"><path d="M4.5 12.5l5 5 10-11"/></svg></button>
+        <span class="txt">${esc(q.text)}</span>
+        <span class="ops"><button data-oq-edit="${i}">編集</button><button data-oq-del="${i}">削除</button></span>
+      </div>`).join(""):'<div class="empty">メモはありません</div>'}
+    <button class="oq-add" data-nav="oq-add">＋ メモを追加</button>
+  </div>`;
+}
+
+/* ---- ログ ---- */
+function renderLog(){
+  const rows = state.log.slice().reverse();
+  view.innerHTML = `
+  <div class="card">
+    <h2 class="section-h">完了ログ（${rows.length}件）</h2>
+    <p class="log-note">チェックを外すと完了記録は消さず、「取り消し」として履歴に追加されます。</p>
+    ${rows.length?rows.map(e=>{
+      const d=new Date(e.at);
+      const when=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      return `<div class="log-row">
+        <span class="log-when">${when}</span>
+        <span class="log-act ${e.action==="done"?"done":"undo"}">${e.action==="done"?"完了":"取り消し"}</span>
+        <span class="log-body">${esc(e.title)}<span class="sub">${esc(e.subject||"")}・予定日 ${fmtMD(e.taskDate)}</span></span>
+      </div>`;
+    }).join(""):'<div class="empty">まだ記録がありません。タスクにチェックを入れると記録されます。</div>'}
+  </div>`;
+}
+
+function render(){
+  renderHeader(); renderTabs();
+  ({day:renderDay, week:renderWeek, todo:renderTodo, stats:renderStats, log:renderLog})[ui.tab]();
+}
+
+/* ================= events ================= */
+document.addEventListener("click", ev=>{
+  const t = ev.target.closest("[data-tab],[data-item],[data-nav],[data-goto-day],[data-filter],[data-oq-check],[data-oq-edit],[data-oq-del]");
+  if(!t) return;
+  if(t.dataset.tab){ ui.tab=t.dataset.tab; render(); window.scrollTo(0,0); return; }
+  if(t.dataset.item){ toggleItem(t.dataset.item); return; }
+  if(t.dataset.gotoDay!==undefined){ ui.dayIdx=+t.dataset.gotoDay; ui.tab="day"; render(); window.scrollTo(0,0); return; }
+  if(t.dataset.filter){ ui.todoFilter=t.dataset.filter; render(); return; }
+  if(t.dataset.oqCheck!==undefined){ const q=state.openQ[+t.dataset.oqCheck]; q.checked=!q.checked; save(); render(); return; }
+  if(t.dataset.oqEdit!==undefined){
+    const q=state.openQ[+t.dataset.oqEdit];
+    const v=prompt("メモを編集", q.text);
+    if(v!==null && v.trim()!==""){ q.text=v.trim(); save(); render(); }
+    return;
+  }
+  if(t.dataset.oqDel!==undefined){
+    if(confirm("このメモを削除しますか？")){ state.openQ.splice(+t.dataset.oqDel,1); save(); render(); }
+    return;
+  }
+  switch(t.dataset.nav){
+    case "day-prev": if(ui.dayIdx>0) ui.dayIdx--; render(); break;
+    case "day-next": if(ui.dayIdx<days.length-1) ui.dayIdx++; render(); break;
+    case "day-today": ui.dayIdx = clampTodayIdx(); render(); break;
+    case "week-prev": if(ui.weekIdx>0) ui.weekIdx--; render(); break;
+    case "week-next": if(ui.weekIdx<weeks.length-1) ui.weekIdx++; render(); break;
+    case "toggle-review": state.includeReview=!state.includeReview; save(); render(); break;
+    case "oq-add": {
+      const v=prompt("メモを追加");
+      if(v!==null && v.trim()!==""){ state.openQ.push({id:"q"+Date.now(), text:v.trim(), checked:false}); save(); render(); }
+      break;
+    }
+  }
+});
+function clampTodayIdx(){
+  const t=todayStr();
+  if(dayByDate[t]!==undefined) return dayByDate[t];
+  return t<days[0].date ? 0 : days.length-1;
+}
+
+/* ================= init ================= */
+ui.dayIdx = clampTodayIdx();
+ui.weekIdx = Math.max(0, weeks.findIndex(w=>w.dayIdxs.includes(ui.dayIdx)));
+render();
+</script>
+</body>
+</html>
