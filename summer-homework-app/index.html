@@ -118,6 +118,19 @@ main{padding-top:12px;}
 .add-form input,.add-form select{font:inherit; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); width:100%;}
 .add-form .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
 .add-form .submit{background:var(--accent); color:#fff; font-weight:700; border-radius:8px; padding:10px;}
+/* ---- edit sheet ---- */
+.edit-btn{flex:none; width:36px; border-radius:10px; border:1px solid var(--line); color:var(--muted); background:var(--card); font-size:15px;}
+.sched-row .edit-btn{width:32px; height:30px; margin-left:8px;}
+.chip.plan{background:var(--exam-bg); color:var(--exam);}
+.sheet-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:50;}
+.sheet{position:fixed; left:0; right:0; bottom:0; z-index:51; background:var(--card); border-radius:16px 16px 0 0; padding:16px 16px calc(18px + env(safe-area-inset-bottom)); max-width:720px; margin:0 auto; display:grid; gap:8px; box-shadow:0 -6px 24px rgba(0,0,0,.25);}
+.sheet-title{font-weight:700; font-size:15px; overflow-wrap:anywhere;}
+.sheet-sub{font-size:12px; color:var(--muted); margin-bottom:2px;}
+.sheet-btn{border:1px solid var(--line); border-radius:10px; padding:11px; font-weight:700; background:var(--bg); text-align:center;}
+.sheet-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+.sheet-btn.danger{color:var(--deadline); border-color:var(--deadline);}
+.sheet-move{display:grid; grid-template-columns:1fr auto; gap:8px;}
+.sheet-move input{font:inherit; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); min-width:0;}
 /* ---- filter chips ---- */
 .filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
 .f-chip{font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--muted);}
@@ -179,6 +192,7 @@ main{padding-top:12px;}
 <nav class="tabs" aria-label="メインメニュー">
   <div class="tabs-inner" id="tabbar"></div>
 </nav>
+<div id="sheetRoot"></div>
 <script>
 const SEED = {"period":"2026-07-19 to 2026-09-04","excluded_dates":["2026-07-24","2026-07-25","2026-07-29","2026-08-01"],"deadlines":[{"date":"2026-07-23","label":"社会：税の作文 下書き（塾なし日）"},{"date":"2026-07-28","label":"社会：税の作文 清書・提出準備（塾なし日）"},{"date":"2026-08-31","label":"国語キュビナ提出／学校説明会報告書提出"},{"date":"2026-09-02","label":"理科まとめ問題集提出／試験：国語・理科・技家"},{"date":"2026-09-03","label":"数学学習ノート③提出／試験：美術・数学・社会"},{"date":"2026-09-04","label":"英語総整理問題集提出／試験：英語・音楽・保体"}],"juku_periods":[{"subjects":["数学","理科"],"start":"2026-07-19","end":"2026-07-22"},{"subjects":["英語"],"start":"2026-07-24","end":"2026-07-27"},{"subjects":["国語","社会"],"start":"2026-07-29","end":"2026-08-01"},{"subjects":["英語"],"start":"2026-08-08","end":"2026-08-11"},{"subjects":["数学","国語"],"start":"2026-08-22","end":"2026-08-26"},{"subjects":["理科","社会"],"start":"2026-08-28","end":"2026-08-31"}],"days":[{"date":"2026-07-19","weekday":"日","excluded":false,"juku_class":["数学","理科"],"juku_review":[],"tasks":[{"category":"school","subject":"家庭","title":"幼少期のエピソードを家族に聞く","minutes":null},{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ①","minutes":null}]},{"date":"2026-07-20","weekday":"月","excluded":false,"juku_class":["数学","理科"],"juku_review":[{"subject":"数学","source_date":"2026-07-19","shifted":false},{"subject":"理科","source_date":"2026-07-19","shifted":false}],"tasks":[{"category":"school","subject":"国語","title":"キュビナ 1回目","minutes":17}]},{"date":"2026-07-21","weekday":"火","excluded":false,"juku_class":["数学","理科"],"juku_review":[{"subject":"数学","source_date":"2026-07-20","shifted":false},{"subject":"理科","source_date":"2026-07-20","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"キュビナ 1回目","minutes":10}]},{"date":"2026-07-22","weekday":"水","excluded":false,"juku_class":["数学","理科"],"juku_review":[{"subject":"数学","source_date":"2026-07-21","shifted":false},{"subject":"理科","source_date":"2026-07-21","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ②","minutes":null}]},{"date":"2026-07-23","weekday":"木","excluded":false,"juku_class":[],"juku_review":[{"subject":"数学","source_date":"2026-07-22","shifted":false},{"subject":"理科","source_date":"2026-07-22","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"税の作文（下書き）※塾ない日","minutes":null}]},{"date":"2026-07-24","weekday":"金","excluded":true,"juku_class":["英語"],"juku_review":[],"tasks":[]},{"date":"2026-07-25","weekday":"土","excluded":true,"juku_class":["英語"],"juku_review":[],"tasks":[]},{"date":"2026-07-26","weekday":"日","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-07-24","shifted":true},{"subject":"英語","source_date":"2026-07-25","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"キュビナ 2回目","minutes":15}]},{"date":"2026-07-27","weekday":"月","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-07-26","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ③","minutes":null}]},{"date":"2026-07-28","weekday":"火","excluded":false,"juku_class":[],"juku_review":[{"subject":"英語","source_date":"2026-07-27","shifted":false}],"tasks":[{"category":"school","subject":"社会","title":"税の作文（清書・提出準備）※塾ない日","minutes":null}]},{"date":"2026-07-29","weekday":"水","excluded":true,"juku_class":["国語","社会"],"juku_review":[],"tasks":[]},{"date":"2026-07-30","weekday":"木","excluded":false,"juku_class":["国語","社会"],"juku_review":[{"subject":"国語","source_date":"2026-07-29","shifted":false},{"subject":"社会","source_date":"2026-07-29","shifted":false}],"tasks":[{"category":"school","subject":"国語","title":"小説を読む","minutes":30}]},{"date":"2026-07-31","weekday":"金","excluded":false,"juku_class":["国語","社会"],"juku_review":[{"subject":"国語","source_date":"2026-07-30","shifted":false},{"subject":"社会","source_date":"2026-07-30","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ④","minutes":null}]},{"date":"2026-08-01","weekday":"土","excluded":true,"juku_class":["国語","社会"],"juku_review":[],"tasks":[]},{"date":"2026-08-02","weekday":"日","excluded":false,"juku_class":[],"juku_review":[{"subject":"国語","source_date":"2026-07-31","shifted":true},{"subject":"社会","source_date":"2026-07-31","shifted":true},{"subject":"国語","source_date":"2026-08-01","shifted":false},{"subject":"社会","source_date":"2026-08-01","shifted":false}],"tasks":[]},{"date":"2026-08-03","weekday":"月","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"数学","title":"ワーク 白紙4p","minutes":null}]},{"date":"2026-08-04","weekday":"火","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"英語","title":"総整理問題集 p.30〜39","minutes":null}]},{"date":"2026-08-05","weekday":"水","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"理科","title":"教科書（生物）p.94〜105","minutes":null}]},{"date":"2026-08-06","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ⑤","minutes":null}]},{"date":"2026-08-07","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"社会","title":"歴史教科書p.186〜191＋プリントNo.10・11","minutes":null}]},{"date":"2026-08-08","weekday":"土","excluded":false,"juku_class":["英語"],"juku_review":[],"tasks":[]},{"date":"2026-08-09","weekday":"日","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-08-08","shifted":false}],"tasks":[]},{"date":"2026-08-10","weekday":"月","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-08-09","shifted":false}],"tasks":[{"category":"school","subject":"数学","title":"ワーク 白紙 残り4p","minutes":null}]},{"date":"2026-08-11","weekday":"火","excluded":false,"juku_class":["英語"],"juku_review":[{"subject":"英語","source_date":"2026-08-10","shifted":false}],"tasks":[{"category":"exam","subject":"英語","title":"総整理問題集 p.40〜49","minutes":null}]},{"date":"2026-08-12","weekday":"水","excluded":false,"juku_class":[],"juku_review":[{"subject":"英語","source_date":"2026-08-11","shifted":false}],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ⑥","minutes":null}]},{"date":"2026-08-13","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"理科","title":"生物p.106〜125仕上げ＋化学p.12〜20","minutes":null}]},{"date":"2026-08-14","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"社会","title":"公民プリントNo.12〜14","minutes":null},{"category":"school","subject":"英語","title":"Real Life p.27","minutes":null}]},{"date":"2026-08-15","weekday":"土","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"国語","title":"文法 p.44〜53","minutes":null}]},{"date":"2026-08-16","weekday":"日","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"数学","title":"ワーク 丸つけ4p","minutes":null}]},{"date":"2026-08-17","weekday":"月","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"英語","title":"総整理問題集 p.50〜57","minutes":null}]},{"date":"2026-08-18","weekday":"火","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"school","subject":"体育","title":"筋トレ・体幹・ストレッチ⑦","minutes":null}]},{"date":"2026-08-19","weekday":"水","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"理科","title":"化学p.21〜39仕上げ","minutes":null}]},{"date":"2026-08-20","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"社会","title":"教科書p.62〜95","minutes":null},{"category":"exam","subject":"技術家庭","title":"技術p.130,131,143,144","minutes":null}]},{"date":"2026-08-21","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"exam","subject":"国語","title":"読解1作品目","minutes":null},{"category":"exam","subject":"家庭","title":"教科書p.208〜225","minutes":null}]},{"date":"2026-08-22","weekday":"土","excluded":false,"juku_class":["数学","国語"],"juku_review":[],"tasks":[]},{"date":"2026-08-23","weekday":"日","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-22","shifted":false},{"subject":"国語","source_date":"2026-08-22","shifted":false}],"tasks":[]},{"date":"2026-08-24","weekday":"月","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-23","shifted":false},{"subject":"国語","source_date":"2026-08-23","shifted":false}],"tasks":[{"category":"school","subject":"数学","title":"ワーク 丸つけ 残り4p","minutes":null},{"category":"exam","subject":"社会","title":"対策プリント（前半3p）","minutes":null}]},{"date":"2026-08-25","weekday":"火","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-24","shifted":false},{"subject":"国語","source_date":"2026-08-24","shifted":false}],"tasks":[{"category":"school","subject":"英語","title":"オンライン英会話①","minutes":null}]},{"date":"2026-08-26","weekday":"水","excluded":false,"juku_class":["数学","国語"],"juku_review":[{"subject":"数学","source_date":"2026-08-25","shifted":false},{"subject":"国語","source_date":"2026-08-25","shifted":false}],"tasks":[{"category":"exam","subject":"美術","title":"試験プリント4枚読み込み","minutes":null}]},{"date":"2026-08-27","weekday":"木","excluded":false,"juku_class":[],"juku_review":[{"subject":"数学","source_date":"2026-08-26","shifted":false},{"subject":"国語","source_date":"2026-08-26","shifted":false}],"tasks":[{"category":"exam","subject":"理科","title":"まとめ問題集 p.10〜19","minutes":null},{"category":"exam","subject":"国語","title":"漢字プリント書き取り","minutes":null}]},{"date":"2026-08-28","weekday":"金","excluded":false,"juku_class":["理科","社会"],"juku_review":[],"tasks":[]},{"date":"2026-08-29","weekday":"土","excluded":false,"juku_class":["理科","社会"],"juku_review":[{"subject":"理科","source_date":"2026-08-28","shifted":false},{"subject":"社会","source_date":"2026-08-28","shifted":false}],"tasks":[{"category":"exam","subject":"理科","title":"まとめ問題集 p.30〜49＋カラープリントNo.7","minutes":null},{"category":"exam","subject":"社会","title":"対策プリント（残り3p）","minutes":null}]},{"date":"2026-08-30","weekday":"日","excluded":false,"juku_class":["理科","社会"],"juku_review":[{"subject":"理科","source_date":"2026-08-29","shifted":false},{"subject":"社会","source_date":"2026-08-29","shifted":false}],"tasks":[{"category":"exam","subject":"国語","title":"キュビナ 試験対策分","minutes":56},{"category":"exam","subject":"音楽","title":"花・ボレロ・校歌など確認","minutes":null},{"category":"exam","subject":"美術","title":"鑑賞課題（息抜きに）","minutes":null}]},{"date":"2026-08-31","weekday":"月","excluded":false,"juku_class":["理科","社会"],"juku_review":[{"subject":"理科","source_date":"2026-08-30","shifted":false},{"subject":"社会","source_date":"2026-08-30","shifted":false}],"tasks":[{"category":"deadline","subject":"国語","title":"①キュビナワークブック 提出","minutes":null},{"category":"deadline","subject":"学年","title":"学校説明会参加報告書 提出","minutes":null},{"category":"exam","subject":"数学","title":"学習ノート③仕上げ・丸付け・直し","minutes":null},{"category":"exam","subject":"理科","title":"まとめ問題集 p.93〜95","minutes":null}]},{"date":"2026-09-01","weekday":"火","excluded":false,"juku_class":[],"juku_review":[{"subject":"理科","source_date":"2026-08-31","shifted":false},{"subject":"社会","source_date":"2026-08-31","shifted":false}],"tasks":[{"category":"exam","subject":"美術","title":"板書10問おさらい","minutes":null},{"category":"exam","subject":"数学","title":"2次方程式・解の公式 最終確認","minutes":null},{"category":"exam","subject":"社会","title":"重要語（社会権・参政権等）総チェック","minutes":null}]},{"date":"2026-09-02","weekday":"水","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"deadline","subject":"理科","title":"まとめ問題集（丸付け済） 提出","minutes":null},{"category":"info","subject":"試験","title":"国語・理科・技術家庭","minutes":null}]},{"date":"2026-09-03","weekday":"木","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"deadline","subject":"数学","title":"学習ノート③ 提出（終学活）","minutes":null},{"category":"info","subject":"試験","title":"美術・数学・社会","minutes":null}]},{"date":"2026-09-04","weekday":"金","excluded":false,"juku_class":[],"juku_review":[],"tasks":[{"category":"deadline","subject":"英語","title":"総整理問題集（丸付け済） 提出","minutes":null},{"category":"info","subject":"試験","title":"英語・音楽・保体","minutes":null}]}],"open_questions":["2026-07-24分の塾復習は本来2026-07-25に入る予定でしたが、予定ありのため2026-07-26にずらしています。","2026-07-31分の塾復習は本来2026-08-01に入る予定でしたが、予定ありのため2026-08-02にずらしています。","8/23（日）は塾の『開室日』表記で、通常授業か任意の自習室開放か区別がつきませんでした。ここでは8/22〜26の授業期間内として扱い、復習も通常通り組み込んでいます。","理科カラープリントNo.7の分量が不明なため、8/29に仮置きしています。","英語Real Life英語 p.27の所要時間が不明なため、社会の課題と同日にまとめています。"]};
 </script>
@@ -193,6 +207,8 @@ const EXTRA_OQ = [
 ];
 function migrate(s){
   s.customTasks = s.customTasks || [];
+  s.customSched = s.customSched || [];
+  s.overrides = s.overrides || {};
   s.openQ = s.openQ || [];
   EXTRA_OQ.forEach(q=>{ if(!s.openQ.some(x=>x.id===q.id)) s.openQ.push({id:q.id, text:q.text, checked:false}); });
   return s;
@@ -211,7 +227,7 @@ function loadState(){
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 const state = loadState();
-const ui = { tab:"day", dayIdx:0, weekIdx:0, todoFilter:"all", addOpen:false };
+const ui = { tab:"day", dayIdx:0, weekIdx:0, todoFilter:"all", addOpen:false, schedOpen:false, sheet:null };
 
 /* ================= data model ================= */
 const CAT_LABEL = {school:"学校の宿題", exam:"期末試験", deadline:"締切・提出", juku:"塾の復習", info:"参考"};
@@ -258,20 +274,32 @@ function weekdayOf(date){
   if(i!==undefined) return days[i].weekday;
   return ["日","月","火","水","木","金","土"][parseDate(date).getDay()];
 }
+// タイトル変更・日付移動（state.overrides）をシード由来のタスクに適用する
+function applyOv(it){
+  const ov = (state.overrides||{})[it.id];
+  if(!ov) return it;
+  if(ov.title) it.title = ov.title;
+  if(ov.date && ov.date!==it.date){
+    it.movedFrom = it.date;
+    it.date = ov.date;
+    it.weekday = weekdayOf(ov.date);
+  }
+  return it;
+}
 function buildItems(){
   items = [];
   days.forEach(d=>{
     d.tasks.forEach((t,i)=>{
-      items.push({id:`t|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"task",
+      items.push(applyOv({id:`t|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"task",
         category:t.category, subject:t.subject, title:t.title, minutes:t.minutes,
-        checkable:t.category!=="info"});
+        checkable:t.category!=="info"}));
     });
     d.juku_review.forEach((r,i)=>{
       const md = fmtMD(r.source_date);
-      items.push({id:`r|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"review",
+      items.push(applyOv({id:`r|${d.date}|${i}`, date:d.date, weekday:d.weekday, kind:"review",
         category:"juku", subject:r.subject,
         title:`塾復習：${r.subject}（${md}授業分${r.shifted?"・振替":""}）`,
-        minutes:null, checkable:true});
+        minutes:null, checkable:true}));
     });
   });
   (state.customTasks||[]).forEach(c=>{
@@ -363,6 +391,7 @@ function taskRowHTML(it, opts){
   if(it.subject) meta.push(`<span>${esc(it.subject)}</span>`);
   if(opts.showDate) meta.push(`<span>${fmtMD(it.date)}(${it.weekday})</span>`);
   if(it.minutes) meta.push(`<span class="minutes">約${it.minutes}分</span>`);
+  if(it.movedFrom) meta.push(`<span>📅 ${fmtMD(it.movedFrom)}から移動</span>`);
   const cb = it.checkable
     ? `<span class="cb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></svg></span>`
     : `<span class="cb" style="border-style:dashed; opacity:.45" aria-hidden="true"></span>`;
@@ -374,7 +403,7 @@ function taskRowHTML(it, opts){
   const tag = it.checkable?"button":"div";
   const attr = it.checkable?` data-item="${it.id}" role="checkbox" aria-checked="${done}"`:"";
   const row = `<${tag} class="${cls}"${attr}>${cb}<span class="t-body"><span class="t-title">${esc(it.title)}</span><span class="t-meta">${meta.join("")}</span></span>${due}</${tag}>`;
-  if(it.custom) return `<div class="task-wrap">${row}<button class="del-btn" data-del-task="${it.id}" aria-label="このタスクを削除">✕</button></div>`;
+  if(it.checkable) return `<div class="task-wrap">${row}<button class="edit-btn" data-edit="${it.id}" aria-label="編集・移動">✎</button></div>`;
   return row;
 }
 function dayItemsHTML(d, compact){
@@ -386,6 +415,8 @@ function dayItemsHTML(d, compact){
   if(compact){
     const chips = d.juku_class.map(s=>`<span class="chip">塾：${esc(s)}</span>`);
     if(BUKATSU[d.date]) chips.push(`<span class="chip club">部活 ${esc(BUKATSU[d.date])}</span>`);
+    state.customSched.filter(s=>s.date===d.date).forEach(s=>
+      chips.push(`<span class="chip plan">予定 ${esc(s.label)}${s.time?" "+esc(s.time):""}</span>`));
     if(chips.length) parts.push(`<div style="margin-bottom:8px">${chips.join(" ")}</div>`);
   }
   const tasks = its.filter(it=>it.kind==="task");
@@ -396,7 +427,7 @@ function dayItemsHTML(d, compact){
     parts.push(`<div class="empty">${d.excluded?"予定日のためお休み":"タスクなし"}</div>`);
   return parts.join("");
 }
-// その日の予定（塾の授業時間・部活）— 日ごとビューの日付の下に表示
+// その日の予定（塾の授業時間・部活・自分で追加した予定）— 日ごとビューの日付の下に表示
 function scheduleCardHTML(d){
   const rows = [];
   d.juku_class.forEach(s=>{
@@ -405,8 +436,20 @@ function scheduleCardHTML(d){
   });
   if(BUKATSU[d.date])
     rows.push(`<div class="sched-row"><span class="chip club">部活</span><b>夏休み中の練習</b><span class="time">${esc(BUKATSU[d.date])}</span></div>`);
-  if(!rows.length) return "";
-  return `<div class="card"><h2 class="section-h">この日の予定</h2>${rows.join("")}</div>`;
+  state.customSched.filter(s=>s.date===d.date).forEach(s=>{
+    rows.push(`<div class="sched-row"><span class="chip plan">予定</span><b>${esc(s.label)}</b><span class="time">${esc(s.time||"")}</span><button class="edit-btn" data-edit-sched="${s.id}" aria-label="予定を編集">✎</button></div>`);
+  });
+  return `<div class="card"><h2 class="section-h">この日の予定</h2>${rows.join("")}
+    <button class="oq-add" data-nav="sched-add-toggle" style="margin-top:${rows.length?8:0}px">＋ 予定を追加</button>
+    <form id="addSchedForm" class="add-form ${ui.schedOpen?"":"hidden"}">
+      <input name="label" placeholder="予定の内容（例：お出かけ、模試）" required>
+      <div class="row2">
+        <input name="time" placeholder="時間（例：9:00〜12:00）※任意">
+        <input name="date" type="date" value="${d.date}" min="${days[0].date}" max="${days[days.length-1].date}" aria-label="日付">
+      </div>
+      <button type="submit" class="submit">追加する</button>
+    </form>
+  </div>`;
 }
 const PRAISE = ["最高！","やったね！","天才！","完璧！","えらすぎる！","今日も勝ち！","ナイスファイト！","すばらしい！"];
 function praiseFor(date){
@@ -594,23 +637,61 @@ function renderLog(){
   </div>`;
 }
 
+/* ---- 編集シート（タイトル変更・日付移動・削除） ---- */
+function renderSheet(){
+  const root = document.getElementById("sheetRoot");
+  if(!ui.sheet){ root.innerHTML=""; return; }
+  const minD = days[0].date, maxD = days[days.length-1].date;
+  if(ui.sheet.type==="item"){
+    const it = itemById[ui.sheet.id];
+    if(!it){ ui.sheet=null; root.innerHTML=""; return; }
+    root.innerHTML = `<div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet" role="dialog" aria-label="タスクの編集">
+      <div class="sheet-title">${esc(it.title)}</div>
+      <div class="sheet-sub">${fmtMD(it.date)}（${it.weekday}）・${CAT_LABEL[it.category]}${it.custom?"・追加したタスク":""}</div>
+      <button class="sheet-btn" data-sheet-rename>✎ タイトルを変更</button>
+      <div class="sheet-move">
+        <input type="date" id="moveDate" value="${it.date}" min="${minD}" max="${maxD}" aria-label="移動先の日付">
+        <button class="sheet-btn primary" data-sheet-move>この日に移動</button>
+      </div>
+      ${it.custom?'<button class="sheet-btn danger" data-sheet-del>このタスクを削除</button>':""}
+      <button class="sheet-btn" data-sheet-close>閉じる</button>
+    </div>`;
+  }else{
+    const s = state.customSched.find(x=>x.id===ui.sheet.id);
+    if(!s){ ui.sheet=null; root.innerHTML=""; return; }
+    root.innerHTML = `<div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet" role="dialog" aria-label="予定の編集">
+      <div class="sheet-title">${esc(s.label)}${s.time?`　${esc(s.time)}`:""}</div>
+      <div class="sheet-sub">${fmtMD(s.date)}（${weekdayOf(s.date)}）・追加した予定</div>
+      <button class="sheet-btn" data-sheet-rename>✎ 内容を変更</button>
+      <button class="sheet-btn" data-sheet-time>🕐 時間を変更</button>
+      <div class="sheet-move">
+        <input type="date" id="moveDate" value="${s.date}" min="${minD}" max="${maxD}" aria-label="移動先の日付">
+        <button class="sheet-btn primary" data-sheet-move>この日に移動</button>
+      </div>
+      <button class="sheet-btn danger" data-sheet-del>この予定を削除</button>
+      <button class="sheet-btn" data-sheet-close>閉じる</button>
+    </div>`;
+  }
+}
 function render(){
   renderHeader(); renderTabs();
   ({day:renderDay, week:renderWeek, todo:renderTodo, stats:renderStats, log:renderLog})[ui.tab]();
+  renderSheet();
 }
 
 /* ================= events ================= */
 document.addEventListener("click", ev=>{
-  const t = ev.target.closest("[data-tab],[data-item],[data-nav],[data-goto-day],[data-filter],[data-oq-check],[data-oq-edit],[data-oq-del],[data-del-task]");
+  const t = ev.target.closest("[data-tab],[data-item],[data-nav],[data-goto-day],[data-filter],[data-oq-check],[data-oq-edit],[data-oq-del],[data-edit],[data-edit-sched],[data-sheet-close],[data-sheet-rename],[data-sheet-time],[data-sheet-move],[data-sheet-del]");
   if(!t) return;
-  if(t.dataset.delTask){
-    if(confirm("この追加タスクを削除しますか？")){
-      state.customTasks = (state.customTasks||[]).filter(c=>c.id!==t.dataset.delTask);
-      delete state.completed[t.dataset.delTask];
-      save(); buildItems(); render();
-    }
-    return;
-  }
+  if(t.dataset.edit){ ui.sheet={type:"item", id:t.dataset.edit}; render(); return; }
+  if(t.dataset.editSched){ ui.sheet={type:"sched", id:t.dataset.editSched}; render(); return; }
+  if(t.dataset.sheetClose!==undefined){ ui.sheet=null; render(); return; }
+  if(t.dataset.sheetRename!==undefined){ sheetRename(); return; }
+  if(t.dataset.sheetTime!==undefined){ sheetTime(); return; }
+  if(t.dataset.sheetMove!==undefined){ sheetMove(); return; }
+  if(t.dataset.sheetDel!==undefined){ sheetDelete(); return; }
   if(t.dataset.tab){ ui.tab=t.dataset.tab; render(); window.scrollTo(0,0); return; }
   if(t.dataset.item){ toggleItem(t.dataset.item); return; }
   if(t.dataset.gotoDay!==undefined){ ui.dayIdx=+t.dataset.gotoDay; ui.tab="day"; render(); window.scrollTo(0,0); return; }
@@ -634,6 +715,7 @@ document.addEventListener("click", ev=>{
     case "week-next": if(ui.weekIdx<weeks.length-1) ui.weekIdx++; render(); break;
     case "toggle-review": state.includeReview=!state.includeReview; save(); render(); break;
     case "task-add-toggle": ui.addOpen=!ui.addOpen; render(); break;
+    case "sched-add-toggle": ui.schedOpen=!ui.schedOpen; render(); break;
     case "oq-add": {
       const v=prompt("メモを追加");
       if(v!==null && v.trim()!==""){ state.openQ.push({id:"q"+Date.now(), text:v.trim(), checked:false}); save(); render(); }
@@ -642,23 +724,94 @@ document.addEventListener("click", ev=>{
   }
 });
 document.addEventListener("submit", ev=>{
-  if(ev.target.id!=="addTaskForm") return;
-  ev.preventDefault();
-  const fd = new FormData(ev.target);
-  const title = String(fd.get("title")||"").trim();
-  if(!title) return;
-  const date = String(fd.get("date")||"") || days[ui.dayIdx].date;
-  state.customTasks.push({
-    id:"c|"+Date.now(), date,
-    category:String(fd.get("category")||"school"),
-    subject:String(fd.get("subject")||"").trim()||"その他",
-    title, minutes:parseInt(String(fd.get("minutes")||""),10)||null
-  });
-  save(); buildItems();
-  if(dayByDate[date]!==undefined) ui.dayIdx = dayByDate[date];
-  ui.addOpen = false;
-  render();
+  if(ev.target.id==="addTaskForm"){
+    ev.preventDefault();
+    const fd = new FormData(ev.target);
+    const title = String(fd.get("title")||"").trim();
+    if(!title) return;
+    const date = String(fd.get("date")||"") || days[ui.dayIdx].date;
+    state.customTasks.push({
+      id:"c|"+Date.now(), date,
+      category:String(fd.get("category")||"school"),
+      subject:String(fd.get("subject")||"").trim()||"その他",
+      title, minutes:parseInt(String(fd.get("minutes")||""),10)||null
+    });
+    save(); buildItems();
+    if(dayByDate[date]!==undefined) ui.dayIdx = dayByDate[date];
+    ui.addOpen = false;
+    render();
+  }else if(ev.target.id==="addSchedForm"){
+    ev.preventDefault();
+    const fd = new FormData(ev.target);
+    const label = String(fd.get("label")||"").trim();
+    if(!label) return;
+    const date = String(fd.get("date")||"") || days[ui.dayIdx].date;
+    state.customSched.push({id:"s|"+Date.now(), date, label, time:String(fd.get("time")||"").trim()});
+    save();
+    if(dayByDate[date]!==undefined) ui.dayIdx = dayByDate[date];
+    ui.schedOpen = false;
+    render();
+  }
 });
+/* ---- 編集シートの各操作 ---- */
+function sheetRename(){
+  if(!ui.sheet) return;
+  if(ui.sheet.type==="item"){
+    const it = itemById[ui.sheet.id]; if(!it) return;
+    const v = prompt("タイトルを変更", it.title);
+    if(v!==null && v.trim()!==""){
+      if(it.custom){ const c=state.customTasks.find(c=>c.id===it.id); if(c) c.title=v.trim(); }
+      else state.overrides[it.id] = Object.assign({}, state.overrides[it.id], {title:v.trim()});
+      save(); buildItems();
+    }
+  }else{
+    const s = state.customSched.find(x=>x.id===ui.sheet.id); if(!s) return;
+    const v = prompt("予定の内容を変更", s.label);
+    if(v!==null && v.trim()!==""){ s.label=v.trim(); save(); }
+  }
+  ui.sheet=null; render();
+}
+function sheetTime(){
+  if(!ui.sheet || ui.sheet.type!=="sched") return;
+  const s = state.customSched.find(x=>x.id===ui.sheet.id); if(!s) return;
+  const v = prompt("時間を変更（例：9:00〜12:00。空にすると時間なし）", s.time||"");
+  if(v!==null){ s.time=v.trim(); save(); }
+  ui.sheet=null; render();
+}
+function sheetMove(){
+  if(!ui.sheet) return;
+  const input = document.getElementById("moveDate");
+  const v = input ? input.value : "";
+  if(!v || dayByDate[v]===undefined){ alert("移動先は 夏休み期間内（7/19〜9/4）の日付を選んでください"); return; }
+  if(ui.sheet.type==="item"){
+    const it = itemById[ui.sheet.id]; if(!it) return;
+    if(v!==it.date){
+      if(it.custom){ const c=state.customTasks.find(c=>c.id===it.id); if(c) c.date=v; }
+      else state.overrides[it.id] = Object.assign({}, state.overrides[it.id], {date:v});
+      save(); buildItems();
+    }
+  }else{
+    const s = state.customSched.find(x=>x.id===ui.sheet.id);
+    if(s && v!==s.date){ s.date=v; save(); }
+  }
+  ui.sheet=null; render();
+}
+function sheetDelete(){
+  if(!ui.sheet) return;
+  if(ui.sheet.type==="item"){
+    const it = itemById[ui.sheet.id];
+    if(!it || !it.custom) return;
+    if(!confirm("この追加タスクを削除しますか？")) return;
+    state.customTasks = state.customTasks.filter(c=>c.id!==it.id);
+    delete state.completed[it.id];
+    save(); buildItems();
+  }else{
+    if(!confirm("この予定を削除しますか？")) return;
+    state.customSched = state.customSched.filter(x=>x.id!==ui.sheet.id);
+    save();
+  }
+  ui.sheet=null; render();
+}
 function clampTodayIdx(){
   const t=todayStr();
   if(dayByDate[t]!==undefined) return dayByDate[t];
