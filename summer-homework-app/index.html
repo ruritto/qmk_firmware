@@ -204,7 +204,7 @@ const KEY = "natsu-shukudai-v1";
 const EXTRA_OQ = [
   {id:"q-jukutime", text:"塾の授業日程・時間は7/18の連絡どおり修正済み（国語=7/24〜27・8/3〜6 17:40〜19:25、社会=7/19〜22 20:55〜21:55・7/29〜8/1 19:30〜20:30）。塾復習タスクの日付は元の計画のままなので、ずれる場合は各タスクの✎で移動してください。"},
   {id:"q-bukatsu", text:"部活は7/24なし・7/26は9:00〜12:00に修正済み（予定表の手書きマークを反映）。"},
-  {id:"q-eng", text:"英語総整理問題集はp.50開始に修正し、p.50〜59／p.60〜69／p.70〜77に振り直しました。最終ページが異なる場合は各タスクの✎でタイトルを直してください。"}
+  {id:"q-eng", text:"英語総整理問題集は学校資料どおり p.30〜57（8/4=p.30〜39、8/11=p.40〜49、8/17=p.50〜57）です。試験範囲表には p.98〜101 も含まれているので、必要なら「＋宿題・タスクを追加」で足してください。"}
 ];
 function migrate(s){
   s.customTasks = s.customTasks || [];
@@ -212,7 +212,7 @@ function migrate(s){
   s.overrides = s.overrides || {};
   s.schedHidden = s.schedHidden || {};
   s.openQ = s.openQ || [];
-  const OQ_VER = 2; // メモ文面を更新したらこの番号を上げる（1回だけ上書きされる）
+  const OQ_VER = 3; // メモ文面を更新したらこの番号を上げる（1回だけ上書きされる）
   EXTRA_OQ.forEach(q=>{
     const ex = s.openQ.find(x=>x.id===q.id);
     if(!ex) s.openQ.push({id:q.id, text:q.text, checked:false});
@@ -277,12 +277,8 @@ const BUKATSU = (()=>{
 function clubFor(date){
   return state.schedHidden["club|"+date] ? null : (BUKATSU[date]||null);
 }
-// 学校からの修正連絡によるタスク内容の修正（英語総整理問題集はp.50開始）
-const TASK_PATCH = {
-  "t|2026-08-04|0":"総整理問題集 p.50〜59",
-  "t|2026-08-11|0":"総整理問題集 p.60〜69",
-  "t|2026-08-17|0":"総整理問題集 p.70〜77"
-};
+// シードのタスク内容をIDで差し替えたい場合に使う（現在は学校資料どおりのため空）
+const TASK_PATCH = {};
 
 // チェック対象アイテムを平坦化（info はチェック対象外、juku_review はチェック可）
 // シードのタスク＋アプリ内で追加した宿題（state.customTasks）をまとめる
