@@ -481,6 +481,50 @@ function praiseFor(date){
   let h=0; for(const c of date) h+=c.charCodeAt(0);
   return PRAISE[h%PRAISE.length];
 }
+/* ---- 先取りするほどエスカレートする褒め（最後は止めにかかる） ---- */
+function localDateOf(iso){
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+// 「今日」別の日のタスクを完了した数（チェックを外した分は差し引く）
+function extraDoneToday(){
+  const today = todayStr(); const per = {};
+  state.log.forEach(e=>{
+    if(localDateOf(e.at)!==today || e.taskDate===today) return;
+    per[e.id] = (per[e.id]||0) + (e.action==="done"?1:-1);
+  });
+  return Object.values(per).filter(v=>v>0).length;
+}
+function extraPraiseHTML(){
+  const n = extraDoneToday();
+  if(n<=0) return "";
+  if(n===1) return `<div class="praise">😲 マジか！？先取りまでやるとは…！</div>`;
+  if(n===2) return `<div class="praise" style="background:var(--exam)">🧙 スゴすぎる…賢者か！？</div>`;
+  return `<div class="praise" style="background:var(--deadline)">🛑 もうやめろ…！グフッ。。（休むのも実力だぞ）</div>`;
+}
+/* ---- 累積勉強時間（概算）：塾の授業（経過日まで）＋完了タスク ---- */
+function durMin(t){
+  const m = String(t).match(/(\d+):(\d+)〜(\d+):(\d+)/);
+  if(!m) return 0;
+  return (+m[3]*60 + +m[4]) - (+m[1]*60 + +m[2]);
+}
+function studyMinutes(){
+  const today = todayStr();
+  let juku = 0;
+  JUKU_SCHED.forEach(j=>{
+    days.forEach(d=>{
+      if(d.date>=j.start && d.date<=j.end && d.date<=today && !state.schedHidden[`juku|${d.date}|${j.subject}`])
+        juku += durMin(j.time);
+    });
+  });
+  let task = 0;
+  items.forEach(it=>{ if(it.checkable && state.completed[it.id]) task += it.minutes||30; });
+  return {juku, task, total: juku+task};
+}
+function fmtHours(min){
+  const h = min/60;
+  return (Math.round(h*10)/10).toFixed(1).replace(/\.0$/,"");
+}
 /* ---- 全部完了後の「もう少しやるなら」提案 ----
    優先順位: 遅れているタスク → 学校の宿題 → 期末試験勉強（日付が近い順）。
    未来の締切提出・塾復習は先取りできないので候補から除外。 */
@@ -535,7 +579,7 @@ function renderDay(){
     <button class="nav-btn" data-nav="day-next" ${ui.dayIdx===days.length-1?"disabled style='opacity:.3'":""} aria-label="次の日">▶</button>
     <button class="today-btn" data-nav="day-today">今日</button>
   </div>
-  ${r.total>0 && r.done===r.total ? `<div class="praise">🎉 全部完了！ ${praiseFor(d.date)}</div>` + extraSuggestHTML(d.date) : ""}
+  ${r.total>0 && r.done===r.total ? `<div class="praise">🎉 全部完了！ ${praiseFor(d.date)}</div>` + (d.date===todayStr()?extraPraiseHTML():"") + extraSuggestHTML(d.date) : ""}
   ${scheduleCardHTML(d)}
   <div class="card ${d.excluded?"is-excluded":""}">
     ${d.excluded?'<p style="margin:0 0 10px;font-size:12px;color:var(--juku)">この日は予定ありのため、学習は入れていません。</p>':""}
@@ -658,6 +702,19 @@ function renderStats(){
       <div>塾の復習を達成率に含める<div class="desc">OFFにすると school / exam / deadline のみで計算します</div></div>
     </div>
   </div>
+  ${(()=>{
+    const sm = studyMinutes();
+    const fullBooks = Math.floor(sm.total/60);
+    const partial = sm.total%60 >= 15;
+    return `<div class="card">
+    <h2 class="section-h">⏱ 君の夏休みの合計勉強時間</h2>
+    <div class="donut-nums">
+      <div class="big">${fmtHours(sm.total)}時間</div>
+      <div class="small">塾の授業 ${fmtHours(sm.juku)}時間 ＋ 完了した宿題・試験勉強 ${fmtHours(sm.task)}時間（概算）</div>
+    </div>
+    <div style="font-size:24px; line-height:1.5; letter-spacing:2px; overflow-wrap:anywhere; margin-top:8px">${"📕".repeat(fullBooks)}${partial?"📖":""}${sm.total===0?'<span style="font-size:13px; color:var(--muted)">これから積み上がっていくよ！</span>':""}</div>
+    <p class="log-note" style="margin:6px 0 0">本1冊＝勉強1時間。がんばるほど本棚がうまっていく！（時間未記載のタスクは約30分、塾は時間割の授業時間で計算）</p>
+  </div>`;})()}
   <div class="card">
     <h2 class="section-h">週ごとの達成率</h2>
     ${weeks.map((w,i)=>{
