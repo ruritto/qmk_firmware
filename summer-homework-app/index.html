@@ -235,7 +235,7 @@ function loadState(){
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 const state = loadState();
-const ui = { tab:"day", dayIdx:0, weekIdx:0, todoFilter:"all", addOpen:false, schedOpen:false, sheet:null };
+const ui = { tab:"day", dayIdx:0, weekIdx:0, todoFilter:"all", addOpen:false, schedOpen:false, sheet:null, extraBudget:30 };
 
 /* ================= data model ================= */
 const CAT_LABEL = {school:"学校の宿題", exam:"期末試験", deadline:"締切・提出", juku:"塾の復習", info:"参考"};
@@ -481,6 +481,44 @@ function praiseFor(date){
   let h=0; for(const c of date) h+=c.charCodeAt(0);
   return PRAISE[h%PRAISE.length];
 }
+/* ---- 全部完了後の「もう少しやるなら」提案 ----
+   優先順位: 遅れているタスク → 学校の宿題 → 期末試験勉強（日付が近い順）。
+   未来の締切提出・塾復習は先取りできないので候補から除外。 */
+const CAT_PRI = {school:0, exam:1, deadline:2, juku:3};
+function extraCandidates(date){
+  return items
+    .filter(it=>it.checkable && !state.completed[it.id] && it.date!==date &&
+      (it.date<date || it.category==="school" || it.category==="exam"))
+    .sort((a,b)=>{
+      const ao=a.date<date?0:1, bo=b.date<date?0:1;
+      if(ao!==bo) return ao-bo;
+      const ac=CAT_PRI[a.category]??9, bc=CAT_PRI[b.category]??9;
+      if(ac!==bc) return ac-bc;
+      return a.date<b.date?-1:a.date>b.date?1:0;
+    });
+}
+function extraSuggestHTML(date){
+  const cands = extraCandidates(date);
+  if(!cands.length) return "";
+  const budget = ui.extraBudget||30;
+  const est = it=>it.minutes||30;
+  const picked = []; let total = 0;
+  for(const it of cands){
+    if(total + est(it) <= budget + 5){ picked.push(it); total += est(it); }
+    if(total >= budget) break;
+  }
+  if(!picked.length){ picked.push(cands[0]); total = est(cands[0]); }
+  return `<div class="card">
+    <h2 class="section-h">🔥 もう少しやるなら（学校の宿題・試験勉強を優先）</h2>
+    <div class="filters" style="margin-bottom:10px">
+      <button class="f-chip ${budget===30?"active":""}" data-nav="extra-30">＋30分コース</button>
+      <button class="f-chip ${budget===60?"active":""}" data-nav="extra-60">＋60分コース</button>
+      <span style="font-size:12px; color:var(--muted); align-self:center">合計 約${total}分</span>
+    </div>
+    ${picked.map(it=>taskRowHTML(it,{showDate:true})).join("")}
+    <p class="log-note" style="margin:8px 0 0">チェックするとその日のタスクを先取りで完了にできます（時間未記載のタスクは約30分として計算）。</p>
+  </div>`;
+}
 
 /* ---- 日ごと ---- */
 function renderDay(){
@@ -497,7 +535,7 @@ function renderDay(){
     <button class="nav-btn" data-nav="day-next" ${ui.dayIdx===days.length-1?"disabled style='opacity:.3'":""} aria-label="次の日">▶</button>
     <button class="today-btn" data-nav="day-today">今日</button>
   </div>
-  ${r.total>0 && r.done===r.total ? `<div class="praise">🎉 全部完了！ ${praiseFor(d.date)}</div>` : ""}
+  ${r.total>0 && r.done===r.total ? `<div class="praise">🎉 全部完了！ ${praiseFor(d.date)}</div>` + extraSuggestHTML(d.date) : ""}
   ${scheduleCardHTML(d)}
   <div class="card ${d.excluded?"is-excluded":""}">
     ${d.excluded?'<p style="margin:0 0 10px;font-size:12px;color:var(--juku)">この日は予定ありのため、学習は入れていません。</p>':""}
@@ -766,6 +804,8 @@ document.addEventListener("click", ev=>{
     case "task-add-toggle": ui.addOpen=!ui.addOpen; render(); break;
     case "sched-add-toggle": ui.schedOpen=!ui.schedOpen; render(); break;
     case "sched-unhide": state.schedHidden={}; save(); render(); break;
+    case "extra-30": ui.extraBudget=30; render(); break;
+    case "extra-60": ui.extraBudget=60; render(); break;
     case "oq-add": {
       const v=prompt("メモを追加");
       if(v!==null && v.trim()!==""){ state.openQ.push({id:"q"+Date.now(), text:v.trim(), checked:false}); save(); render(); }
